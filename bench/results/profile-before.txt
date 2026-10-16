@@ -1,0 +1,28 @@
+
+  _     ._   __/__   _ _  _  _ _/_   Recorded: 01:46:59  Samples:  19142
+ /_//_/// /_\ / //_// / //_'/ //     Duration: 22.284    CPU time: 8.403
+/   _/                      v5.1.1
+
+Profile at /Users/mohd/p2_1/sluice/bench/profile_sluice.py:44
+
+22.2836 Runner.run  asyncio/runners.py:87
+├─ 14.3966 [self]  asyncio/runners.py
+├─ 7.0339 coro  starlette/middleware/base.py:144
+│     [12 frames hidden]  starlette, fastapi
+│        6.0884 run_endpoint_function  fastapi/routing.py:363
+│        └─ 6.0683 chat_completions  sluice/api/app.py:177
+│           ├─ 4.1179 handle  sluice/api/app.py:204
+│           │  └─ 3.6116 Executor.complete  sluice/router/executor.py:211
+│           │     └─ 3.5866 Executor._run  sluice/router/executor.py:128
+│           │        └─ 3.5280 Executor._attempt  sluice/router/executor.py:168
+│           │           └─ 3.3215 call  sluice/router/executor.py:212
+│           │              └─ 3.2670 OpenAICompatProvider.complete  sluice/providers/openai_compat.py:89
+│           │                 └─ 3.1378 AsyncClient.post  httpx/_client.py:1838
+│           │                       [27 frames hidden]  httpx, httpcore
+│           └─ 1.7951 finish  sluice/api/app.py:381
+│              └─ 1.5956 UsageLedger.record  sluice/telemetry/ledger.py:39
+│                 ├─ 1.0215 Connection.__exit__  <built-in>
+│                 └─ 0.5492 Connection.execute  <built-in>
+└─ 0.5557 RequestResponseCycle.run_asgi  uvicorn/protocols/http/h11_impl.py:409
+      [7 frames hidden]  uvicorn, fastapi, starlette
+

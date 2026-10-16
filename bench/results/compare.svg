@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 714 322" font-family="system-ui, -apple-system, sans-serif" font-size="11" role="img" aria-label="Latency percentiles versus request rate for direct, Sluice and LiteLLM">
+<style>
+:root{--bg:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--grid:#e4e3df;--direct:#8a8984;--sluice:#2a78d6;--litellm:#eb6834;}
+@media (prefers-color-scheme: dark){:root{--bg:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--grid:#3a3936;--direct:#8a8984;--sluice:#3987e5;--litellm:#d95926;}}
+.t{fill:var(--ink)} .m{fill:var(--ink2)} .g{stroke:var(--grid);stroke-width:1}
+.l{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+</style>
+<rect width="714" height="322" fill="var(--bg)"/>
+<g transform="translate(12,10)">
+<line class="l" x1="0" x2="18" y1="6" y2="6" style="stroke:var(--direct)"/><text class="t" x="24" y="10">direct</text>
+<line class="l" x1="90" x2="108" y1="6" y2="6" style="stroke:var(--sluice)"/><text class="t" x="114" y="10">sluice</text>
+<line class="l" x1="180" x2="198" y1="6" y2="6" style="stroke:var(--litellm)"/><text class="t" x="204" y="10">litellm</text>
+<text class="m" x="280" y="10">median of reps · mock upstream adds 50 ms · ◇ = a stalled rep left out</text>
+<g transform="translate(0,0)">
+<text class="t" x="52" y="34" font-weight="600">p50 latency (ms)</text>
+<line class="g" x1="52" x2="314" y1="252.0" y2="252.0"/><text class="m" x="46" y="256.0" text-anchor="end">40</text>
+<line class="g" x1="52" x2="314" y1="182.4" y2="182.4"/><text class="m" x="46" y="186.4" text-anchor="end">50</text>
+<line class="g" x1="52" x2="314" y1="112.8" y2="112.8"/><text class="m" x="46" y="116.8" text-anchor="end">60</text>
+<text class="m" x="52.0" y="268.0" text-anchor="middle">25</text>
+<text class="m" x="81.1" y="268.0" text-anchor="middle">50</text>
+<text class="m" x="139.3" y="268.0" text-anchor="middle">100</text>
+<text class="m" x="197.6" y="268.0" text-anchor="middle">150</text>
+<text class="m" x="255.8" y="268.0" text-anchor="middle">200</text>
+<text class="m" x="314.0" y="268.0" text-anchor="middle">250</text>
+<text class="m" x="183.0" y="284.0" text-anchor="middle">requests / second (open loop)</text>
+<path class="l" d="M52.0,147.6 L81.1,154.5 L139.3,161.5 L197.6,161.5 L255.8,161.5 L314.0,161.5" style="stroke:var(--direct)"/>
+<path d="M52.0,142.6 l5,5 l-5,5 l-5,-5 z" style="fill:var(--direct);stroke:var(--bg)" stroke-width="1.5"><title>direct @ 25 rps: p50 55.0 ms (generator lagged in 1 rep)</title></path>
+<circle cx="81.1" cy="154.5" r="3.5" style="fill:var(--direct);stroke:var(--bg)" stroke-width="1.5"><title>direct @ 50 rps: p50 54.0 ms</title></circle>
+<circle cx="139.3" cy="161.5" r="3.5" style="fill:var(--direct);stroke:var(--bg)" stroke-width="1.5"><title>direct @ 100 rps: p50 53.0 ms</title></circle>
+<circle cx="197.6" cy="161.5" r="3.5" style="fill:var(--direct);stroke:var(--bg)" stroke-width="1.5"><title>direct @ 150 rps: p50 53.0 ms</title></circle>
+<path d="M255.8,156.5 l5,5 l-5,5 l-5,-5 z" style="fill:var(--direct);stroke:var(--bg)" stroke-width="1.5"><title>direct @ 200 rps: p50 53.0 ms (generator lagged in 1 rep)</title></path>
+<circle cx="314.0" cy="161.5" r="3.5" style="fill:var(--direct);stroke:var(--bg)" stroke-width="1.5"><title>direct @ 250 rps: p50 53.0 ms</title></circle>
+<path class="l" d="M52.0,112.8 L81.1,126.7 L139.3,147.6 L197.6,152.2 L255.8,161.5 L314.0,154.5" style="stroke:var(--sluice)"/>
+<path d="M52.0,107.8 l5,5 l-5,5 l-5,-5 z" style="fill:var(--sluice);stroke:var(--bg)" stroke-width="1.5"><title>sluice @ 25 rps: p50 60.0 ms (generator lagged in 1 rep)</title></path>
+<path d="M81.1,121.7 l5,5 l-5,5 l-5,-5 z" style="fill:var(--sluice);stroke:var(--bg)" stroke-width="1.5"><title>sluice @ 50 rps: p50 58.0 ms (generator lagged in 1 rep)</title></path>
+<circle cx="139.3" cy="147.6" r="3.5" style="fill:var(--sluice);stroke:var(--bg)" stroke-width="1.5"><title>sluice @ 100 rps: p50 55.0 ms</title></circle>
+<circle cx="197.6" cy="152.2" r="3.5" style="fill:var(--sluice);stroke:var(--bg)" stroke-width="1.5"><title>sluice @ 150 rps: p50 54.3 ms</title></circle>
+<circle cx="255.8" cy="161.5" r="3.5" style="fill:var(--sluice);stroke:var(--bg)" stroke-width="1.5"><title>sluice @ 200 rps: p50 53.0 ms</title></circle>
+<circle cx="314.0" cy="154.5" r="3.5" style="fill:var(--sluice);stroke:var(--bg)" stroke-width="1.5"><title>sluice @ 250 rps: p50 54.0 ms</title></circle>
+<path class="l" d="M52.0,91.9 L81.1,123.2 L139.3,140.6 L197.6,133.6 L255.8,147.6 L314.0,133.6" style="stroke:var(--litellm)"/>
+<circle cx="52.0" cy="91.9" r="3.5" style="fill:var(--litellm);stroke:var(--bg)" stroke-width="1.5"><title>litellm @ 25 rps: p50 63.0 ms</title></circle>
+<path d="M81.1,118.2 l5,5 l-5,5 l-5,-5 z" style="fill:var(--litellm);stroke:var(--bg)" stroke-width="1.5"><title>litellm @ 50 rps: p50 58.5 ms (generator lagged in 1 rep)</title></path>
+<circle cx="139.3" cy="140.6" r="3.5" style="fill:var(--litellm);stroke:var(--bg)" stroke-width="1.5"><title>litellm @ 100 rps: p50 56.0 ms</title></circle>
+<circle cx="197.6" cy="133.6" r="3.5" style="fill:var(--litellm);stroke:var(--bg)" stroke-width="1.5"><title>litellm @ 150 rps: p50 57.0 ms</title></circle>
+<circle cx="255.8" cy="147.6" r="3.5" style="fill:var(--litellm);stroke:var(--bg)" stroke-width="1.5"><title>litellm @ 200 rps: p50 55.0 ms</title></circle>
+<path d="M314.0,128.6 l5,5 l-5,5 l-5,-5 z" style="fill:var(--litellm);stroke:var(--bg)" stroke-width="1.5"><title>litellm @ 250 rps: p50 57.0 ms (generator lagged in 1 rep)</title></path>
+</g>
+<g transform="translate(360,0)">
+<text class="t" x="52" y="34" font-weight="600">p99 latency (ms)</text>
+<line class="g" x1="52" x2="314" y1="240.9" y2="240.9"/><text class="m" x="46" y="244.9" text-anchor="end">50</text>
+<line class="g" x1="52" x2="314" y1="185.6" y2="185.6"/><text class="m" x="46" y="189.6" text-anchor="end">100</text>
+<line class="g" x1="52" x2="314" y1="130.3" y2="130.3"/><text class="m" x="46" y="134.3" text-anchor="end">150</text>
+<line class="g" x1="52" x2="314" y1="75.0" y2="75.0"/><text class="m" x="46" y="79.0" text-anchor="end">200</text>
+<text class="m" x="52.0" y="268.0" text-anchor="middle">25</text>
+<text class="m" x="81.1" y="268.0" text-anchor="middle">50</text>
+<text class="m" x="139.3" y="268.0" text-anchor="middle">100</text>
+<text class="m" x="197.6" y="268.0" text-anchor="middle">150</text>
+<text class="m" x="255.8" y="268.0" text-anchor="middle">200</text>
+<text class="m" x="314.0" y="268.0" text-anchor="middle">250</text>
+<text class="m" x="183.0" y="284.0" text-anchor="middle">requests / second (open loop)</text>
+<path class="l" d="M52.0,231.5 L81.1,233.2 L139.3,233.2 L197.6,232.5 L255.8,209.4 L314.0,233.2" style="stroke:var(--direct)"/>
+<path d="M52.0,226.5 l5,5 l-5,5 l-5,-5 z" style="fill:var(--direct);stroke:var(--bg)" stroke-width="1.5"><title>direct @ 25 rps: p99 58.5 ms (generator lagged in 1 rep)</title></path>
+<circle cx="81.1" cy="233.2" r="3.5" style="fill:var(--direct);stroke:var(--bg)" stroke-width="1.5"><title>direct @ 50 rps: p99 57.0 ms</title></circle>
+<circle cx="139.3" cy="233.2" r="3.5" style="fill:var(--direct);stroke:var(--bg)" stroke-width="1.5"><title>direct @ 100 rps: p99 57.0 ms</title></circle>
+<circle cx="197.6" cy="232.5" r="3.5" style="fill:var(--direct);stroke:var(--bg)" stroke-width="1.5"><title>direct @ 150 rps: p99 57.7 ms</title></circle>
+<path d="M255.8,204.4 l5,5 l-5,5 l-5,-5 z" style="fill:var(--direct);stroke:var(--bg)" stroke-width="1.5"><title>direct @ 200 rps: p99 78.5 ms (generator lagged in 1 rep)</title></path>
+<circle cx="314.0" cy="233.2" r="3.5" style="fill:var(--direct);stroke:var(--bg)" stroke-width="1.5"><title>direct @ 250 rps: p99 57.0 ms</title></circle>
+<path class="l" d="M52.0,219.9 L81.1,226.6 L139.3,216.6 L197.6,231.7 L255.8,233.2 L314.0,232.1" style="stroke:var(--sluice)"/>
+<path d="M52.0,214.9 l5,5 l-5,5 l-5,-5 z" style="fill:var(--sluice);stroke:var(--bg)" stroke-width="1.5"><title>sluice @ 25 rps: p99 69.0 ms (generator lagged in 1 rep)</title></path>
+<path d="M81.1,221.6 l5,5 l-5,5 l-5,-5 z" style="fill:var(--sluice);stroke:var(--bg)" stroke-width="1.5"><title>sluice @ 50 rps: p99 63.0 ms (generator lagged in 1 rep)</title></path>
+<circle cx="139.3" cy="216.6" r="3.5" style="fill:var(--sluice);stroke:var(--bg)" stroke-width="1.5"><title>sluice @ 100 rps: p99 72.0 ms</title></circle>
+<circle cx="197.6" cy="231.7" r="3.5" style="fill:var(--sluice);stroke:var(--bg)" stroke-width="1.5"><title>sluice @ 150 rps: p99 58.3 ms</title></circle>
+<circle cx="255.8" cy="233.2" r="3.5" style="fill:var(--sluice);stroke:var(--bg)" stroke-width="1.5"><title>sluice @ 200 rps: p99 57.0 ms</title></circle>
+<circle cx="314.0" cy="232.1" r="3.5" style="fill:var(--sluice);stroke:var(--bg)" stroke-width="1.5"><title>sluice @ 250 rps: p99 58.0 ms</title></circle>
+<path class="l" d="M52.0,221.0 L81.1,217.2 L139.3,231.0 L197.6,122.6 L255.8,163.5 L314.0,70.6" style="stroke:var(--litellm)"/>
+<circle cx="52.0" cy="221.0" r="3.5" style="fill:var(--litellm);stroke:var(--bg)" stroke-width="1.5"><title>litellm @ 25 rps: p99 68.0 ms</title></circle>
+<path d="M81.1,212.2 l5,5 l-5,5 l-5,-5 z" style="fill:var(--litellm);stroke:var(--bg)" stroke-width="1.5"><title>litellm @ 50 rps: p99 71.5 ms (generator lagged in 1 rep)</title></path>
+<circle cx="139.3" cy="231.0" r="3.5" style="fill:var(--litellm);stroke:var(--bg)" stroke-width="1.5"><title>litellm @ 100 rps: p99 59.0 ms</title></circle>
+<circle cx="197.6" cy="122.6" r="3.5" style="fill:var(--litellm);stroke:var(--bg)" stroke-width="1.5"><title>litellm @ 150 rps: p99 157.0 ms</title></circle>
+<circle cx="255.8" cy="163.5" r="3.5" style="fill:var(--litellm);stroke:var(--bg)" stroke-width="1.5"><title>litellm @ 200 rps: p99 120.0 ms</title></circle>
+<path d="M314.0,65.6 l5,5 l-5,5 l-5,-5 z" style="fill:var(--litellm);stroke:var(--bg)" stroke-width="1.5"><title>litellm @ 250 rps: p99 204.0 ms (generator lagged in 1 rep)</title></path>
+</g>
+</g></svg>

@@ -1,0 +1,54 @@
+
+  _     ._   __/__   _ _  _  _ _/_   Recorded: 01:48:36  Samples:  18671
+ /_//_/// /_\ / //_// / //_'/ //     Duration: 22.292    CPU time: 7.909
+/   _/                      v5.1.1
+
+Profile at /Users/mohd/p2_1/sluice/bench/profile_sluice.py:44
+
+15.2638 Runner.run  asyncio/runners.py:87
+15.0039 [self]  asyncio/runners.py
+0.5470 AsyncHTTP11Connection.handle_async_request  httpcore/_async/http11.py:65
+0.4580 app  fastapi/routing.py:428
+0.4001 handle  sluice/api/app.py:210
+0.3582 AsyncConnectionPool._assign_requests_to_connections  httpcore/_async/connection_pool.py:270
+0.3424 AsyncHTTP11Connection._send_request_headers  httpcore/_async/http11.py:140
+0.3135 BaseHTTPMiddleware.__call__  starlette/middleware/base.py:101
+0.3075 AsyncClient._merge_url  httpx/_client.py:391
+0.2973 RequestResponseCycle.send  uvicorn/protocols/http/h11_impl.py:455
+0.2872 app  fastapi/routing.py:145
+0.2600 poll.poll  <built-in>
+0.2555 AnyIOStream.get_extra_info  httpcore/_backends/anyio.py:82
+0.2512 finish  sluice/api/app.py:387
+0.2494 is_socket_readable  httpcore/_utils.py:8
+0.2323 Tracer.start_as_current_span  opentelemetry/sdk/trace/__init__.py:1107
+0.2238 AsyncClient._send_single_request  httpx/_client.py:1717
+0.2029 AsyncClient.build_request  httpx/_client.py:340
+0.1770 Response.aiter_raw  httpx/_models.py:1037
+0.1669 PoolByteStream.aclose  httpcore/_async/connection_pool.py:409
+0.1663 Executor._attempt  sluice/router/executor.py:168
+0.1627 chat_completions  sluice/api/app.py:183
+0.1422 AsyncHTTPTransport.handle_async_request  httpx/_transports/default.py:374
+0.1221 OpenAICompatProvider.complete  sluice/providers/openai_compat.py:89
+0.0937 AsyncConnectionPool.handle_async_request  httpcore/_async/connection_pool.py:199
+0.0868 AsyncHTTPConnection.handle_async_request  httpcore/_async/connection.py:69
+0.0630 Executor._run  sluice/router/executor.py:128
+0.0614 _StreamingResponse.__call__  starlette/middleware/base.py:230
+0.0570 wrapped_app  starlette/_exception_handler.py:31
+0.0560 call  sluice/router/executor.py:212
+0.0451 coro  starlette/middleware/base.py:144
+0.0365 APIRoute.handle  fastapi/routing.py:1312
+0.0361 APIRouter.__call__  starlette/routing.py:672
+0.0355 AsyncClient._send_handling_auth  httpx/_client.py:1645
+0.0347 APIRouter.app  fastapi/routing.py:2789
+0.0310 AsyncClient.send  httpx/_client.py:1594
+0.0299 AsyncHTTP11Connection.has_expired  httpcore/_async/http11.py:274
+0.0282 RequestResponseCycle.run_asgi  uvicorn/protocols/http/h11_impl.py:409
+0.0275 Executor.complete  sluice/router/executor.py:211
+0.0270 APIRoute.handle  starlette/routing.py:273
+0.0270 AsyncExitStackMiddleware.__call__  fastapi/middleware/asyncexitstack.py:15
+0.0262 Response.aiter_bytes  httpx/_models.py:982
+0.0260 _send  starlette/middleware/errors.py:156
+0.0255 app  fastapi/routing.py:142
+0.0245 ExceptionTelemetryMiddleware.__call__  fastapi/telemetry/_asgi.py:149
+0.0235 run_endpoint_function  fastapi/routing.py:363
+
