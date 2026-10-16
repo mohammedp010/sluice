@@ -117,10 +117,34 @@ class CacheConfig(BaseModel):
     max_temperature: float = 0.0  # requests asking for more randomness than this skip the cache
 
 
+class McpServerConfig(BaseModel):
+    """One upstream MCP server: a local command (stdio) or a URL (Streamable HTTP)."""
+
+    command: list[str] | None = None
+    env: dict[str, str] = Field(default_factory=dict)  # values may be "$VAR" (read at start)
+    url: str | None = None
+    timeout_s: float = 30.0  # per tool call
+
+    @model_validator(mode="after")
+    def _one(self):
+        if (self.command is None) == (self.url is None):
+            raise ValueError("an MCP server needs exactly one of `command` or `url`")
+        return self
+
+
+class McpConfig(BaseModel):
+    servers: dict[str, McpServerConfig] = Field(default_factory=dict)
+    audit_db: str | None = None  # default: auth.db_path
+    # Browsers send Origin; MCP's spec requires checking it (DNS rebinding). CLI clients don't
+    # send one. Any Origin not listed here is refused.
+    allowed_origins: list[str] = Field(default_factory=list)
+
+
 class Settings(BaseModel):
     auth: AuthConfig = Field(default_factory=AuthConfig)
     telemetry: TelemetryConfig = Field(default_factory=TelemetryConfig)
     cache: CacheConfig = Field(default_factory=CacheConfig)
+    mcp: McpConfig = Field(default_factory=McpConfig)
     state: StateConfig = Field(default_factory=StateConfig)
     limits: LimitsConfig = Field(default_factory=LimitsConfig)
     providers: dict[str, ProviderConfig]

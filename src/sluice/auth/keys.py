@@ -5,6 +5,7 @@ the key is 256 bits of randomness, so there is nothing to brute-force.
 """
 from __future__ import annotations
 
+import fnmatch
 import hashlib
 import json
 import secrets
@@ -22,6 +23,8 @@ class VirtualKey:
     team: str = ""
     app: str = ""
     allowed_models: list[str] = field(default_factory=lambda: ["*"])
+    # MCP tools this key may see and call, as "server__tool" globs. Empty: none (deny by default)
+    allowed_tools: list[str] = field(default_factory=list)
     rpm: int = 60
     tpm: int = 20_000
     daily_budget_usd: float | None = None
@@ -30,6 +33,9 @@ class VirtualKey:
 
     def allows(self, model: str) -> bool:
         return "*" in self.allowed_models or model in self.allowed_models
+
+    def allows_tool(self, name: str) -> bool:
+        return any(fnmatch.fnmatchcase(name, pattern) for pattern in self.allowed_tools)
 
 
 def hash_key(raw: str) -> str:
@@ -54,12 +60,17 @@ class KeyStore:
                     revoked INTEGER NOT NULL DEFAULT 0,
                     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"""
             )
+            cols = {r[1] for r in self._db.execute("PRAGMA table_info(keys)")}
+            if "allowed_tools" not in cols:  # databases created before Phase 8
+                self._db.execute(
+                    "ALTER TABLE keys ADD COLUMN allowed_tools TEXT NOT NULL DEFAULT '[]'")
 
     @staticmethod
     def _row(r: sqlite3.Row) -> VirtualKey:
         return VirtualKey(
             id=r["id"], name=r["name"], team=r["team"], app=r["app"],
             allowed_models=json.loads(r["allowed_models"]), rpm=r["rpm"], tpm=r["tpm"],
+            allowed_tools=json.loads(r["allowed_tools"]),
             daily_budget_usd=r["daily_budget_usd"], monthly_budget_usd=r["monthly_budget_usd"],
             revoked=bool(r["revoked"]),
         )
@@ -67,16 +78,17 @@ class KeyStore:
     def create(
         self, name: str, team: str = "", app: str = "", allowed_models: list[str] | None = None,
         rpm: int = 60, tpm: int = 20_000, daily_budget_usd: float | None = None,
-        monthly_budget_usd: float | None = None,
+        monthly_budget_usd: float | None = None, allowed_tools: list[str] | None = None,
     ) -> tuple[str, VirtualKey]:
         """Returns (raw_key, record). The raw key is shown once and never stored."""
         raw = PREFIX + secrets.token_urlsafe(32)
         with self._lock, self._db:
             cur = self._db.execute(
                 "INSERT INTO keys (key_hash,key_hint,name,team,app,allowed_models,rpm,tpm,"
-                "daily_budget_usd,monthly_budget_usd) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                "daily_budget_usd,monthly_budget_usd,allowed_tools) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                 (hash_key(raw), raw[-4:], name, team, app, json.dumps(allowed_models or ["*"]),
-                 rpm, tpm, daily_budget_usd, monthly_budget_usd),
+                 rpm, tpm, daily_budget_usd, monthly_budget_usd,
+                 json.dumps(allowed_tools or [])),
             )
             row = self._db.execute("SELECT * FROM keys WHERE id=?", (cur.lastrowid,)).fetchone()
         return raw, self._row(row)

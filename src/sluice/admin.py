@@ -19,6 +19,8 @@ def main(argv=None):
     c.add_argument("--tpm", type=int, default=20000)
     c.add_argument("--daily-budget", type=float)
     c.add_argument("--monthly-budget", type=float)
+    c.add_argument("--tools", default="",
+                   help='MCP tools as server__tool globs, comma-separated (e.g. "files__read_*")')
     sub.add_parser("list-keys")
     r = sub.add_parser("revoke-key")
     r.add_argument("id", type=int)
@@ -27,7 +29,8 @@ def main(argv=None):
 
     if a.cmd == "create-key":
         raw, k = store.create(
-            a.name, a.team, a.app, a.models.split(","), a.rpm, a.tpm, a.daily_budget, a.monthly_budget)
+            a.name, a.team, a.app, a.models.split(","), a.rpm, a.tpm, a.daily_budget, a.monthly_budget,
+            [t for t in a.tools.split(",") if t])
         print(f"id={k.id}  name={k.name}\nkey (shown once): {raw}")
     elif a.cmd == "list-keys":
         for k, hint in store.list():

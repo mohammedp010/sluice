@@ -31,6 +31,9 @@ from ..config import (
 )
 from ..limits.estimate import cost_micro_usd, estimate_prompt_tokens
 from ..limits.state import SharedState
+from ..mcp.audit import McpAudit
+from ..mcp.proxy import PARSE_ERROR, SUPPORTED, McpProxy, rpc_error
+from ..mcp.upstream import Upstreams
 from ..providers.base import (
     ChatParams,
     Chunk,
@@ -91,6 +94,7 @@ def create_app(
     telemetry: Telemetry | None = None,
     ledger: UsageLedger | None = None,
     cache: SemanticCache | None = None,
+    mcp_audit: McpAudit | None = None,
 ):
     settings = settings or load_settings(os.environ.get("SLUICE_POLICY", DEFAULT_POLICY))
     tcfg = settings.telemetry
@@ -114,6 +118,7 @@ def create_app(
         await app.state.shared.aclose()
         if cache and hasattr(cache.embedder, "aclose"):
             await cache.embedder.aclose()
+        await upstreams.close()
         tel.shutdown()
 
     app = FastAPI(title="Sluice", lifespan=lifespan)
@@ -124,6 +129,9 @@ def create_app(
     app.state.telemetry = tel
     app.state.ledger = ledger
     app.state.cache = cache
+    upstreams = Upstreams(settings.mcp.servers)
+    app.state.mcp = McpProxy(upstreams, mcp_audit or McpAudit(
+        settings.mcp.audit_db or settings.auth.db_path), tracer)
 
     paid = frozenset(n for n, c in settings.providers.items() if c.paid)
 
@@ -169,6 +177,32 @@ def create_app(
         @app.get("/metrics")
         async def prometheus_metrics():
             return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+    @app.post("/mcp")
+    async def mcp_endpoint(request: Request):
+        """MCP over Streamable HTTP (stateless, JSON responses). See sluice/mcp/proxy.py."""
+        origin = request.headers.get("origin")
+        if origin and origin not in settings.mcp.allowed_origins:
+            return _error(403, "Origin not allowed", "origin_not_allowed")
+        version = request.headers.get("mcp-protocol-version")
+        if version and version not in SUPPORTED:
+            return _error(400, f"Unsupported MCP protocol version {version}",
+                          "unsupported_protocol_version")
+        key = _authenticate(request) if settings.auth.enabled else ANON
+        if key is None:
+            return _error(401, "Invalid or missing API key", "invalid_api_key",
+                          {"WWW-Authenticate": "Bearer"})
+        try:
+            msg = json.loads(await request.body())
+        except ValueError:
+            return JSONResponse(rpc_error(None, PARSE_ERROR, "invalid JSON"), status_code=400)
+        reply = await request.app.state.mcp.handle(msg, key)
+        return Response(status_code=202) if reply is None else JSONResponse(reply)
+
+    @app.api_route("/mcp", methods=["GET", "DELETE"])
+    async def mcp_no_stream():
+        # stateless: no server-initiated stream, no session to delete (both allowed by the spec)
+        return Response(status_code=405, headers={"Allow": "POST"})
 
     @app.get("/v1/models")
     async def list_models(request: Request):

@@ -22,6 +22,10 @@ limits:
   default_completion_estimate: 256
   paid_daily_call_cap: 50
 
+mcp:                          # Phase 8: MCP tool servers behind /mcp (keys need --tools grants)
+  servers: {}                 # e.g. files: {command: ["npx", "-y", "@modelcontextprotocol/server-filesystem", "/tmp"]}
+  allowed_origins: []         # browser Origins allowed to call /mcp
+
 providers:
   mock:
     type: mock

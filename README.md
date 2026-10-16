@@ -3,7 +3,8 @@
 An OpenAI-compatible LLM gateway, built phase by phase as a learning project (`PLAN.md`). It
 sits between applications and model providers and decides how much traffic flows, where it
 goes, and when to shut it off. It handles keys, rate limits and budgets, retries, fallback and
-circuit breaking, tracing and cost attribution, a semantic cache, and cheap-first routing.
+circuit breaking, tracing and cost attribution, a semantic cache, cheap-first routing, stream
+resume after a mid-answer failure, and an MCP tool proxy with per-key permissions.
 
 **Total spent on LLM APIs: $0.** Every model call in this repo went to a mock upstream or to a
 local Ollama model. Paid providers are blocked unless `SLUICE_ALLOW_PAID=1`, and even then
@@ -26,6 +27,7 @@ flowchart LR
     L <--> RS[("Redis<br/>buckets, spend")]
     A <--> DB[("SQLite<br/>keys, usage ledger")]
     X -. spans .-> OT["OpenTelemetry<br/>→ Jaeger, /metrics"]
+    M["MCP client"] -->|"POST /mcp"| MP["MCP proxy<br/>per-key tool grants<br/>audit log"] --> TS["MCP tool servers<br/>(stdio / HTTP)"]
 ```
 
 Every response carries `x-sluice-trace-id`, `x-sluice-provider`, `x-sluice-attempts`, and where
@@ -49,6 +51,7 @@ other hardware.
 | Failover vs LiteLLM (30% faulty primary) | both 100% success; p99 Sluice 228 ms, LiteLLM 2.8 s (one run each) | same → [compare.md](bench/results/compare.md) |
 | Bug found by benchmarking | cancelled httpx calls leaked pool slots (22 → 100, then dead); fixed: 0% → 100% success after an overload | `bench/httpx_pool_leak.py` → [httpx-pool-leak.md](bench/results/httpx-pool-leak.md), ADR 0007 |
 | Top profiling hotspot | per-request SQLite commit on the event loop, ~19% of CPU; now batched off the loop | `bench/profile_sluice.py` → [before](bench/results/profile-before-flat.txt) / [after](bench/results/profile-after-flat.txt) |
+| Stream resume after a mid-answer failure | prefill: 30/30 clean (same model), 29/30 (other model); silent restart: 0/30 | `bench/stream_resume_eval.py` → [stream-resume.md](bench/results/stream-resume.md) |
 
 Where Sluice loses to LiteLLM (providers, admin UI, key management, budgets per team/user,
 integrations, maturity): see the feature table in [compare.md](bench/results/compare.md).
@@ -75,12 +78,14 @@ Two replicas + Redis + Jaeger: `docker compose up` (policy `policies/compose.yam
 | Traces, metrics, cost | Jaeger via `telemetry.traces: otlp`; `GET /metrics`; `python -m sluice.report --by team` | ADR 0004 |
 | Semantic cache | `cache: true` on a route; `Cache-Control: no-cache` / `no-store` honoured | ADR 0005 |
 | Quality routing | `escalate:` route + `escalate_on:` checks | ADR 0006 |
+| Stream resume | `stream_resume: prefill` on a route (backup must honour prefill) | ADR 0008 |
+| MCP proxy | `mcp.servers` in the policy; keys get `--tools "server__tool*"` grants; `python -m sluice.report --mcp` | ADR 0009 |
 
 ## Tests and benchmarks
 
 ```bash
 redis-server --port 6399 --save "" &      # optional: the Redis tests skip without it
-.venv/bin/pytest                          # 119 tests, ~3 s
+.venv/bin/pytest                          # 135 tests, ~4 s
 ```
 
 The LiteLLM comparison needs LiteLLM in its own environment (pinned, Python 3.12) and uvloop:
@@ -96,10 +101,10 @@ python3.12 -m venv bench/.venv-litellm && bench/.venv-litellm/bin/pip install "l
 ```
 src/sluice/   api/ (FastAPI app, SSE)  providers/ (mock, OpenAI-compatible)  router/ (executor,
               breaker)  auth/  limits/ (Redis Lua buckets)  telemetry/ (OTel, ledger)  cache/
-              quality/  admin.py  report.py
+              quality/  mcp/ (endpoint, upstreams, audit)  admin.py  report.py
 policies/     routes.yaml (local), compose.yaml (docker)
 bench/        load generator, mock upstream, every experiment; results/ holds their output
-docs/         decisions/ (ADRs 0001-0007), learning/ (one note per phase, with questions)
+docs/         decisions/ (ADRs 0001-0009), learning/ (one note per phase, with questions)
 ```
 
 ## Definition of done (PLAN.md §7)
@@ -115,7 +120,10 @@ docs/         decisions/ (ADRs 0001-0007), learning/ (one note per phase, with q
 
 ## Known limits
 
-- One OpenAI-compatible adapter. Azure OpenAI and Bedrock (Phase 8) are not built.
+- One OpenAI-compatible adapter. Azure OpenAI and Bedrock (the third Phase 8 item) are not built.
+- Stream resume's `prefill` was measured on Ollama only; some providers don't honour a trailing
+  assistant message (ADR 0008).
+- MCP: tools only (no resources/prompts), no rate limits on tool calls (ADR 0009).
 - The semantic cache is per process. pgvector would share it across replicas; it needs Docker.
 - The cache eval's labels are a first draft (`bench/data/README.md`), and its 9% held-out
   false-hit rate means it's off on the Ollama route.

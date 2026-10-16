@@ -3,6 +3,7 @@
     python -m sluice.report --by team
     python -m sluice.report --by app --since 2026-10-01
     python -m sluice.report --trace <trace id from the x-sluice-trace-id header>
+    python -m sluice.report --mcp           # MCP tool calls by key, tool and outcome
 """
 from __future__ import annotations
 
@@ -32,7 +33,17 @@ def main(argv=None):
     ap.add_argument("--by", choices=sorted(GROUPS), default="team")
     ap.add_argument("--since", help="UTC date or timestamp prefix, e.g. 2026-10-01")
     ap.add_argument("--trace", help="show the ledger row for one trace id")
+    ap.add_argument("--mcp", action="store_true", help="MCP tool-call audit summary")
     a = ap.parse_args(argv)
+    if a.mcp:
+        from .mcp.audit import McpAudit
+
+        rows = McpAudit(a.db).summary()
+        w = max([4] + [len(str(r[1])) for r in rows])
+        print(f"{'key':<16} {'tool':<{w}} {'outcome':<14} calls")
+        for k, tool, outcome, n in rows:
+            print(f"{k or '-':<16} {tool:<{w}} {outcome:<14} {n}")
+        return
     ledger = UsageLedger(a.db)
     if a.trace:
         row = ledger.by_trace(a.trace)

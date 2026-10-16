@@ -7,6 +7,7 @@ from sluice.api.app import create_app
 from sluice.auth.keys import KeyStore
 from sluice.config import Route, Settings
 from sluice.limits.state import MemoryState
+from sluice.mcp.audit import McpAudit
 from sluice.providers.mock import MockProvider
 from sluice.telemetry.ledger import UsageLedger
 from sluice.telemetry.otel import build_telemetry
@@ -26,7 +27,8 @@ def make_app(settings=None, providers=None, key_kw=None, state=None, cache=None,
     spans, reader = InMemorySpanExporter(), InMemoryMetricReader()
     tel = build_telemetry(span_exporter=spans, metric_readers=[reader])
     app = create_app(settings, providers, state=state or MemoryState(), keystore=keys,
-                     telemetry=tel, ledger=UsageLedger(":memory:"), cache=cache)
+                     telemetry=tel, ledger=UsageLedger(":memory:"), cache=cache,
+                     mcp_audit=McpAudit(":memory:"))
     app.state.spans, app.state.metrics_reader = spans, reader
     return app, raw
 
