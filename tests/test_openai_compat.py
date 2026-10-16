@@ -70,3 +70,34 @@ async def test_stream_errors_are_not_silent_success(tail):
     p = provider(lambda r: httpx.Response(200, text=body))
     with pytest.raises(ProviderError):
         [c async for c in p.stream(PARAMS)]
+
+
+async def test_pool_timeout_replaces_the_client():
+    calls = {"n": 0}
+
+    def h(req):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise httpx.PoolTimeout("all slots taken")
+        return httpx.Response(200, json={"choices": [{"message": {"content": "back"}}]})
+
+    p = OpenAICompatProvider("up", "http://up/v1", transport=httpx.MockTransport(h))
+    first = p._client
+    with pytest.raises(ProviderError):
+        await p.complete(PARAMS)
+    assert p._client is not first and first.is_closed  # a fresh pool, the old one closed
+    assert (await p.complete(PARAMS)).content == "back"
+
+
+async def test_attempt_budget_becomes_httpx_timeout_and_counts_as_timeout():
+    seen = {}
+
+    def h(req):
+        seen.update(req.extensions["timeout"])
+        raise httpx.ReadTimeout("slow")
+
+    p = OpenAICompatProvider("up", "http://up/v1", timeout_s=60, transport=httpx.MockTransport(h))
+    with pytest.raises(ProviderError) as e:
+        await p.complete(ChatParams("x", [Message("user", "hi")], timeout_s=2.5))
+    assert seen == {"connect": 2.5, "read": 2.5, "write": 2.5, "pool": 2.5}
+    assert e.value.timeout and e.value.retryable

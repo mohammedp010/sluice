@@ -1,6 +1,12 @@
 """Adapter for any upstream that already speaks the OpenAI chat-completions format.
 
 Ollama exposes this at /v1, and many hosted providers do too, so one adapter covers them.
+
+Timeouts are httpx's own, never task cancellation: with httpcore 1.0.9, a request cancelled
+while its connection is being set up leaves a dead CONNECTING entry in the pool for good.
+Enough of them fill the pool and the provider never answers again (bench/httpx_pool_leak.py,
+ADR 0007). So each attempt's budget (ChatParams.timeout_s) becomes an httpx.Timeout and the
+executor's cancellation is only a late backstop; and a PoolTimeout replaces the client.
 """
 from __future__ import annotations
 
@@ -14,6 +20,7 @@ from .base import ChatParams, Chunk, Completion, Provider, ProviderError, Usage
 
 
 class OpenAICompatProvider(Provider):
+    enforces_timeout = True
     def __init__(
         self,
         name: str,
@@ -21,14 +28,32 @@ class OpenAICompatProvider(Provider):
         api_key: str | None = None,
         timeout_s: float = 60.0,
         client: httpx.AsyncClient | None = None,
+        transport: httpx.AsyncBaseTransport | None = None,
     ):
         self.name = name
+        self.timeout_s = timeout_s
         headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
-        # connect fast, but allow slow generation between bytes
-        timeout = httpx.Timeout(timeout_s, connect=5.0)
-        self._client = client or httpx.AsyncClient(
-            base_url=base_url.rstrip("/"), headers=headers, timeout=timeout
-        )
+
+        def make() -> httpx.AsyncClient:
+            # connect fast, but allow slow generation between bytes
+            return httpx.AsyncClient(base_url=base_url.rstrip("/"), headers=headers,
+                                     timeout=httpx.Timeout(timeout_s, connect=5.0),
+                                     transport=transport)
+
+        self._make = None if client else make  # an injected client is the caller's to manage
+        self._client = client or make()
+
+    def _timeout(self, params: ChatParams):
+        if params.timeout_s is None:
+            return httpx.USE_CLIENT_DEFAULT
+        t = params.timeout_s
+        return httpx.Timeout(min(self.timeout_s, t), connect=min(5.0, t))
+
+    async def _reset_if_poisoned(self, client: httpx.AsyncClient) -> None:
+        """Every pool slot taken and none freed in time: assume leaked slots, start afresh."""
+        if self._make and client is self._client:
+            self._client = self._make()
+            await client.aclose()
 
     @staticmethod
     def _body(params: ChatParams, stream: bool) -> dict:
@@ -62,11 +87,16 @@ class OpenAICompatProvider(Provider):
         return Usage(raw.get("prompt_tokens", 0), raw.get("completion_tokens", 0))
 
     async def complete(self, params: ChatParams) -> Completion:
+        client = self._client
         try:
-            r = await self._client.post(
-                "/chat/completions", json=self._body(params, False), headers=self._headers())
+            r = await client.post(
+                "/chat/completions", json=self._body(params, False), headers=self._headers(),
+                timeout=self._timeout(params))
         except httpx.HTTPError as e:
-            raise ProviderError(f"{self.name}: {type(e).__name__}: {e}") from e
+            if isinstance(e, httpx.PoolTimeout):
+                await self._reset_if_poisoned(client)
+            raise ProviderError(f"{self.name}: {type(e).__name__}: {e}",
+                                timeout=isinstance(e, httpx.TimeoutException)) from e
         if r.status_code != 200:
             raise ProviderError(f"{self.name}: HTTP {r.status_code}: {r.text[:200]}", r.status_code)
         try:
@@ -82,9 +112,11 @@ class OpenAICompatProvider(Provider):
             raise ProviderError(f"{self.name}: malformed response: {e!r}") from e
 
     async def stream(self, params: ChatParams) -> AsyncIterator[Chunk]:
+        client = self._client
         try:
-            async with self._client.stream(
-                "POST", "/chat/completions", json=self._body(params, True), headers=self._headers()
+            async with client.stream(
+                "POST", "/chat/completions", json=self._body(params, True), headers=self._headers(),
+                timeout=self._timeout(params),
             ) as r:
                 if r.status_code != 200:
                     body = (await r.aread()).decode(errors="replace")[:200]
@@ -115,7 +147,10 @@ class OpenAICompatProvider(Provider):
                 # connection closed cleanly but early: without this a truncated answer looks done
                 raise ProviderError(f"{self.name}: stream ended before [DONE]")
         except httpx.HTTPError as e:
-            raise ProviderError(f"{self.name}: {type(e).__name__}: {e}") from e
+            if isinstance(e, httpx.PoolTimeout):
+                await self._reset_if_poisoned(client)
+            raise ProviderError(f"{self.name}: {type(e).__name__}: {e}",
+                                timeout=isinstance(e, httpx.TimeoutException)) from e
 
     async def aclose(self) -> None:
         await self._client.aclose()

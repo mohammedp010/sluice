@@ -180,3 +180,39 @@ async def test_upstream_requests_carry_traceparent():
     assert seen["tp"].split("-")[:3] == [
         "00", r.headers["x-sluice-trace-id"], f"{attempt.context.span_id:016x}"]
     assert json.loads(r.text)["choices"][0]["message"]["content"] == "x"
+
+
+async def test_ledger_buffers_writes_and_flushes_in_background():
+    import asyncio
+    import contextlib
+    import sqlite3
+
+    import pytest
+
+    from sluice.telemetry.ledger import UsageLedger
+
+    led = UsageLedger(":memory:")
+    led.record(trace_id="a", status=200)
+    led.record(trace_id="b", status=200)
+
+    def count():
+        return led._db.execute("SELECT COUNT(*) FROM usage").fetchone()[0]
+
+    assert count() == 0  # buffered: nothing written on the request path
+    task = asyncio.create_task(led.run_flusher(every_s=0.01))
+    await asyncio.sleep(0.05)
+    assert count() == 2
+    led.record(trace_id="c", status=200)
+    task.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+        await task
+    assert count() == 3  # shutdown flushes what's left
+    assert led.by_trace("a")["ts"].endswith("Z")
+
+    real = led._db
+    led._db = sqlite3.connect(":memory:")  # no table: the write fails
+    led.record(trace_id="d", status=200)
+    with pytest.raises(sqlite3.Error):
+        led.flush()
+    led._db = real
+    assert led.flush() == 1  # the failed row was kept and written on retry

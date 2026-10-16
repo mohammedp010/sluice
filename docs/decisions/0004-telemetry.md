@@ -47,10 +47,12 @@
 - **Ledger:** one row per request that reached the executor. Rejected requests (401/403/404,
   rate and budget limits) are traced and counted but cost nothing, so they get no row.
   - Team and app are copied onto the row, so spend stays attributed to the owner *at the time*.
-  - The write is synchronous SQLite (sub-millisecond at this scale). Rollback journal plus
-    busy timeout, not WAL, because WAL is unreliable on Docker Desktop bind mounts shared by
-    two replicas.
-  - A failed ledger write is recorded on the span but never fails a served request.
+  - Writes are batched: buffered per request, written once a second in one transaction on a
+    worker thread (ADR 0007; the per-request commit was the top profiling hotspot). A crash
+    loses up to ~1 s of rows. Rollback journal plus busy timeout, not WAL, because WAL is
+    unreliable on Docker Desktop bind mounts shared by two replicas.
+  - Ledger writes never touch the request path. A failed flush keeps its rows and retries on
+    the next tick.
 - **Known gaps:**
   - No sampling: every request is traced. Fine for a laptop; Phase 7 will measure the cost.
   - `/metrics` is unauthenticated.

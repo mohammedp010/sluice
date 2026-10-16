@@ -10,6 +10,7 @@ gateway's request span). Leaving a target is a `sluice.fallback` event on that p
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import random
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -68,8 +69,15 @@ class NonRetryableError(Exception):
         self.trail = trail
 
 
+BACKSTOP_S = 1.0  # extra time before cancelling a provider that enforces its own timeout
+
+
+def is_timeout(e: BaseException) -> bool:
+    return isinstance(e, TimeoutError) or (isinstance(e, ProviderError) and e.timeout)
+
+
 def error_type(e: BaseException) -> str:
-    if isinstance(e, TimeoutError):
+    if is_timeout(e):
         return "timeout"
     if isinstance(e, ProviderError) and e.status is not None:
         return str(e.status)
@@ -168,22 +176,23 @@ class Executor:
             attrs[sc.REQUEST_MAX_TOKENS] = params.max_tokens
         if params.temperature is not None:
             attrs[sc.REQUEST_TEMPERATURE] = params.temperature
+        budget = min(target.timeout_s, remaining)
+        params = dataclasses.replace(params, timeout_s=budget)
         t0 = time.monotonic()
         with self._tracer.start_as_current_span(
             f"chat {target.upstream_model}", kind=SpanKind.CLIENT, attributes=attrs,
             record_exception=False, set_status_on_exception=False,
         ) as span:
             try:
-                result = await call(
-                    self.providers[target.provider], params, min(target.timeout_s, remaining))
+                result = await call(self.providers[target.provider], params, budget)
             except (ProviderError, TimeoutError) as e:
                 err = e if isinstance(e, ProviderError) else ProviderError(
-                    f"{target.provider}: timeout after {min(target.timeout_s, remaining):.2f}s")
+                    f"{target.provider}: timeout after {budget:.2f}s")
                 if not isinstance(e, ProviderError):
                     err.__cause__ = e
                 et = error_type(e)
                 trail.attempts.append(Attempt(
-                    target.provider, "timeout" if isinstance(e, TimeoutError) else "error",
+                    target.provider, "timeout" if is_timeout(e) else "error",
                     (time.monotonic() - t0) * 1000, str(err), target.upstream_model, et))
                 span.set_attribute(sc.ERROR_TYPE, et)
                 span.set_status(Status(StatusCode.ERROR, str(err)[:200]))
@@ -201,7 +210,7 @@ class Executor:
 
     async def complete(self, route: Route, params: ChatParams) -> tuple[Completion, Trail]:
         async def call(p: Provider, prm: ChatParams, timeout: float):
-            async with asyncio.timeout(timeout):
+            async with asyncio.timeout(timeout + (BACKSTOP_S if p.enforces_timeout else 0)):
                 return await p.complete(prm)
 
         return await self._run(route, params, call)
@@ -216,7 +225,8 @@ class Executor:
         async def call(p: Provider, prm: ChatParams, timeout: float):
             it = p.stream(prm)
             try:
-                async with asyncio.timeout(timeout):  # time-to-first-chunk budget
+                # time-to-first-chunk budget (a late backstop if the adapter enforces it itself)
+                async with asyncio.timeout(timeout + (BACKSTOP_S if p.enforces_timeout else 0)):
                     first = await anext(it)
             except StopAsyncIteration:
                 first = None

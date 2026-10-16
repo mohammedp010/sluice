@@ -23,6 +23,8 @@ class ChatParams:
     temperature: float | None = None
     max_tokens: int | None = None
     response_format: dict | None = None
+    # This attempt's time budget, set by the executor. See Provider.enforces_timeout.
+    timeout_s: float | None = None
 
 
 @dataclass
@@ -57,9 +59,10 @@ class ProviderError(Exception):
     `status` None means no HTTP answer at all (connect failure, timeout, stream cut).
     """
 
-    def __init__(self, message: str, status: int | None = None):
+    def __init__(self, message: str, status: int | None = None, timeout: bool = False):
         super().__init__(message)
         self.status = status
+        self.timeout = timeout  # the adapter's own I/O timeout fired
 
     @property
     def retryable(self) -> bool:
@@ -81,6 +84,10 @@ class ProviderError(Exception):
 
 class Provider(ABC):
     name: str
+    # True: the adapter enforces ChatParams.timeout_s with its own I/O timeouts, so the executor
+    # only cancels as a late backstop. Cancelling httpx mid-connect leaks pool slots for good
+    # (bench/httpx_pool_leak.py, ADR 0007). False: the executor cancels at the budget.
+    enforces_timeout: bool = False
 
     @abstractmethod
     async def complete(self, params: ChatParams) -> Completion: ...

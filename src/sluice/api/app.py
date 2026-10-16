@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import os
-import sqlite3
 import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -101,7 +101,12 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        flusher = asyncio.create_task(ledger.run_flusher()) if ledger else None
         yield
+        if flusher:
+            flusher.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await flusher  # its finally block writes what's left
         for p in app.state.providers.values():
             await p.aclose()
         await app.state.shared.aclose()
@@ -427,18 +432,15 @@ def create_app(
                                  "http.response.status_code": log.status})
         metrics.duration.record(secs, {sc.REQUEST_MODEL: log.model, "sluice.outcome": log.outcome})
         if ledger and trail and log.key:  # only requests that reached a provider cost anything
-            try:
-                ledger.record(
-                    trace_id=format(span.get_span_context().trace_id, "032x"),
-                    key_id=log.key.id, key_name=log.key.name, team=log.key.team,
-                    app=log.key.app, model=log.model, provider=provider,
-                    upstream_model=upstream_model, status=log.status, outcome=log.outcome,
-                    attempts=len(trail.attempts), fallbacks=len(failovers),
-                    prompt_tokens=usage.prompt_tokens if usage else 0,
-                    completion_tokens=usage.completion_tokens if usage else 0,
-                    cost_micro_usd=log.cost_micro, latency_ms=round(secs * 1000, 1))
-            except sqlite3.Error as e:  # ledger trouble must not fail a served request
-                span.record_exception(e)
+            ledger.record(  # buffered; written off the request path (ADR 0007)
+                trace_id=format(span.get_span_context().trace_id, "032x"),
+                key_id=log.key.id, key_name=log.key.name, team=log.key.team,
+                app=log.key.app, model=log.model, provider=provider,
+                upstream_model=upstream_model, status=log.status, outcome=log.outcome,
+                attempts=len(trail.attempts), fallbacks=len(failovers),
+                prompt_tokens=usage.prompt_tokens if usage else 0,
+                completion_tokens=usage.completion_tokens if usage else 0,
+                cost_micro_usd=log.cost_micro, latency_ms=round(secs * 1000, 1))
         span.end()
 
     def _authenticate(request: Request) -> VirtualKey | None:

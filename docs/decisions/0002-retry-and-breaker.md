@@ -21,5 +21,9 @@
   Open providers are skipped without being called.
 - **Streams:** failover only before the first chunk (ADR 0001). A mid-stream death is not retried
   but does count as a breaker failure.
-- **Known gaps:** a 429 `Retry-After` is not honoured yet; no idle timeout between stream chunks;
-  breaker state is per process (Phase 3 moves shared state to Redis if needed).
+- **Timeouts are the adapter's, not cancellation (ADR 0007):** cancelling httpx mid-connect
+  leaked pool slots until a provider was dead for good. Adapters that set `enforces_timeout`
+  get the budget as `ChatParams.timeout_s`, and the executor only cancels as a backstop
+  (budget + 1 s). httpx's read timeout also bounds the silence between stream chunks.
+- **Known gaps:** a 429 `Retry-After` is not honoured yet; breaker state is per process
+  (Phase 3 moves shared state to Redis if needed).
