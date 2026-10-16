@@ -10,6 +10,14 @@ telemetry:
   otlp_endpoint: http://localhost:4318
   prometheus: true            # GET /metrics
   ledger: true                # per-request cost rows; report: python -m sluice.report --by team
+cache:                        # semantic cache (needs: ollama pull nomic-embed-text)
+  enabled: true
+  embed_base_url: http://localhost:11434/v1
+  embed_model: nomic-embed-text
+  embed_prefix: "clustering: "
+  threshold: 0.895            # from bench/results/cache-eval.md; re-run it before changing
+  guard_max_diff: 2
+  ttl_s: 3600
 limits:
   default_completion_estimate: 256
   paid_daily_call_cap: 50
@@ -25,6 +33,7 @@ providers:
 
 routes:
   mock-model:
+    cache: true               # opt-in per route
     provider: mock
     upstream_model: mock-1
     # fake prices so budgets can be exercised for free (USD per million tokens)
@@ -32,6 +41,7 @@ routes:
     price_out_per_mtok: 2000
   local-small:
     deadline_s: 120
+    cache: false              # 9% test false hits (cache-eval.md): not yet for real answers
     chain:
       - {provider: ollama, upstream_model: "llama3.2:1b", timeout_s: 60, retries: 1}
       - {provider: mock, upstream_model: mock-1, retries: 0}   # degraded last resort

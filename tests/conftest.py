@@ -14,7 +14,7 @@ from sluice.telemetry.otel import build_telemetry
 ROUTE = Route(chain=[{"provider": "mock", "upstream_model": "mock-1", "retries": 0}])
 
 
-def make_app(settings=None, providers=None, key_kw=None, state=None, **mock_kw):
+def make_app(settings=None, providers=None, key_kw=None, state=None, cache=None, **mock_kw):
     """Returns (app, raw_key). Default: one mock provider, in-memory sqlite + state.
 
     Telemetry goes to memory too: app.state.spans (finished spans), app.state.metrics_reader,
@@ -26,7 +26,7 @@ def make_app(settings=None, providers=None, key_kw=None, state=None, **mock_kw):
     spans, reader = InMemorySpanExporter(), InMemoryMetricReader()
     tel = build_telemetry(span_exporter=spans, metric_readers=[reader])
     app = create_app(settings, providers, state=state or MemoryState(), keystore=keys,
-                     telemetry=tel, ledger=UsageLedger(":memory:"))
+                     telemetry=tel, ledger=UsageLedger(":memory:"), cache=cache)
     app.state.spans, app.state.metrics_reader = spans, reader
     return app, raw
 

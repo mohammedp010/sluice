@@ -1,0 +1,160 @@
+{"id": "para-00", "a": "How do I reverse a list in Python?", "b": "What's the way to reverse a Python list?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-01", "a": "What is the capital of Australia?", "b": "Which city is Australia's capital?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-02", "a": "How many days are in a leap year?", "b": "A leap year has how many days?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-03", "a": "Explain what a hash table is.", "b": "Can you describe how hash tables work?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-04", "a": "What's the boiling point of water in Celsius?", "b": "At what temperature in °C does water boil?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-05", "a": "How can I undo my last commit in git?", "b": "How do I undo the most recent git commit?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-06", "a": "Translate 'good morning' into Spanish.", "b": "How do you say 'good morning' in Spanish?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-07", "a": "What causes the seasons on Earth?", "b": "Why does Earth have seasons?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-08", "a": "Give me a recipe for pancakes.", "b": "How do I make pancakes?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-09", "a": "Who wrote Pride and Prejudice?", "b": "Who is the author of Pride and Prejudice?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-10", "a": "How do I center a div in CSS?", "b": "What's the CSS to center a div?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-11", "a": "What is the speed of light?", "b": "How fast does light travel?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-12", "a": "Convert 100 Fahrenheit to Celsius.", "b": "What is 100°F in Celsius?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-13", "a": "What does HTTP status 404 mean?", "b": "Meaning of a 404 HTTP error?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-14", "a": "How do I install numpy?", "b": "What's the command to install numpy?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-15", "a": "Summarize the plot of Hamlet.", "b": "Give me a short summary of Hamlet's story.", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-16", "a": "What is photosynthesis?", "b": "Explain photosynthesis.", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-17", "a": "How many bones are in the human body?", "b": "How many bones does an adult human have?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-18", "a": "What's the difference between TCP and UDP?", "b": "TCP vs UDP: how do they differ?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-19", "a": "How do I read a CSV file in pandas?", "b": "Load a CSV into a pandas DataFrame, how?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-20", "a": "What year did World War II end?", "b": "When did WW2 end?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-21", "a": "Is a tomato a fruit or a vegetable?", "b": "Are tomatoes fruits or vegetables?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-22", "a": "What is the square root of 144?", "b": "sqrt(144)?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-23", "a": "How do I make a cup of green tea?", "b": "What's the right way to brew green tea?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-24", "a": "What is the tallest mountain in the world?", "b": "Which mountain is the highest on Earth?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-25", "a": "How do I exit vim?", "b": "How can I quit the vim editor?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-26", "a": "What is machine learning?", "b": "Can you explain what machine learning is?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-27", "a": "Recommend a good book on habits.", "b": "Suggest a good book about building habits.", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-28", "a": "What is the population of Japan?", "b": "How many people live in Japan?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-29", "a": "How do I check my Python version?", "b": "Which command shows the installed Python version?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-30", "a": "What is the time complexity of binary search?", "b": "Big-O of binary search?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-31", "a": "Write a haiku about autumn.", "b": "Compose a haiku on the theme of autumn.", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-32", "a": "How do I create a virtual environment in Python?", "b": "How to set up a Python venv?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-33", "a": "What does DNA stand for?", "b": "What is DNA short for?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-34", "a": "What is the largest planet in our solar system?", "b": "Which planet in the solar system is the biggest?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-35", "a": "How long should I boil an egg for a soft yolk?", "b": "Soft-boiled egg: how many minutes?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-36", "a": "What is the chemical symbol for gold?", "b": "Gold's symbol on the periodic table?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-37", "a": "How do I sort a dictionary by value in Python?", "b": "Sorting a Python dict by its values, how?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-38", "a": "Why is the sky blue?", "b": "What makes the sky look blue?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-39", "a": "What's a good name for a golden retriever puppy?", "b": "Suggest names for a golden retriever puppy.", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-40", "a": "How do I list all files in a directory with bash?", "b": "Bash command to show every file in a folder?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-41", "a": "What is the GDP of Germany?", "b": "How big is Germany's economy in GDP terms?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-42", "a": "Explain recursion simply.", "b": "Give me a simple explanation of recursion.", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-43", "a": "How do I convert a string to an integer in JavaScript?", "b": "JavaScript: turn a string into an int?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-44", "a": "What is the freezing point of water in Fahrenheit?", "b": "Water freezes at what temperature in °F?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-45", "a": "What are the symptoms of dehydration?", "b": "How can I tell if I'm dehydrated?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-46", "a": "Who painted the Mona Lisa?", "b": "Which artist painted the Mona Lisa?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-47", "a": "How do I merge two dictionaries in Python?", "b": "Combine two Python dicts into one?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-48", "a": "What is the meaning of 'ephemeral'?", "b": "Define the word ephemeral.", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-49", "a": "How many continents are there?", "b": "What's the number of continents on Earth?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-50", "a": "hi, how do i reset my password", "b": "How can I reset my password?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-51", "a": "What time zone is London in?", "b": "Which timezone does London use?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-52", "a": "Explain the difference between a list and a tuple in Python.", "b": "Python list vs tuple: what's the difference?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-53", "a": "What is an API?", "b": "Can you explain what an API is?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-54", "a": "How do I compute the mean of a list in Python?", "b": "Average of a Python list, how to calculate?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-55", "a": "What is the distance from the Earth to the Moon?", "b": "How far away is the Moon from Earth?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-56", "a": "What's the best way to learn a new language?", "b": "How should I go about learning a foreign language?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-57", "a": "Give me three tips for better sleep.", "b": "Three tips to sleep better?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-58", "a": "What is Docker used for?", "b": "What's the purpose of Docker?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-59", "a": "How do I write a for loop in Go?", "b": "Syntax of a for loop in Golang?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-60", "a": "When was the Eiffel Tower built?", "b": "What year was the Eiffel Tower constructed?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-61", "a": "What does 'API rate limit' mean?", "b": "Explain what an API rate limit is.", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-62", "a": "How do I take a screenshot on a Mac?", "b": "Mac screenshot shortcut?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-63", "a": "What is the plural of 'mouse'?", "b": "Plural form of mouse?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-64", "a": "Is it safe to eat raw cookie dough?", "b": "Can you safely eat uncooked cookie dough?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-65", "a": "What is the main ingredient in guacamole?", "b": "Guacamole is mainly made from what?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-66", "a": "How do I split a string by commas in Python?", "b": "Python: split a string on commas?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-67", "a": "What is inflation?", "b": "Explain inflation in economics.", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "para-68", "a": "How many players are on a soccer team?", "b": "How many players does a football (soccer) side field?", "same": true, "category": "paraphrase", "split": "dev"}
+{"id": "para-69", "a": "What is the currency of Switzerland?", "b": "Which currency is used in Switzerland?", "same": true, "category": "paraphrase", "split": "test"}
+{"id": "hard-00", "a": "Convert 5 kilometers to miles.", "b": "Convert 5 miles to kilometers.", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-01", "a": "What is the capital of Austria?", "b": "What is the capital of Australia?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-02", "a": "How do I reverse a list in Python?", "b": "How do I reverse a string in Python?", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-03", "a": "What's the boiling point of water in Celsius?", "b": "What's the boiling point of water in Fahrenheit?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-04", "a": "Who wrote War and Peace?", "b": "Who wrote Crime and Punishment?", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-05", "a": "How do I install numpy?", "b": "How do I uninstall numpy?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-06", "a": "What year did World War II end?", "b": "What year did World War II start?", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-07", "a": "What is the square root of 144?", "b": "What is the square root of 169?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-08", "a": "Translate 'good morning' into Spanish.", "b": "Translate 'good morning' into French.", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-09", "a": "How do I center a div in CSS?", "b": "How do I center text in CSS?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-10", "a": "Is it safe to eat raw cookie dough?", "b": "Is it safe to eat raw cookie dough while pregnant?", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-11", "a": "What is the population of Japan?", "b": "What is the population of China?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-12", "a": "How do I add an item to a list in Python?", "b": "How do I remove an item from a list in Python?", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-13", "a": "What is the largest planet in our solar system?", "b": "What is the smallest planet in our solar system?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-14", "a": "Convert 100 Fahrenheit to Celsius.", "b": "Convert 100 Celsius to Fahrenheit.", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-15", "a": "What is the tallest mountain in the world?", "b": "What is the tallest mountain in Europe?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-16", "a": "How do I sort a list in ascending order in Python?", "b": "How do I sort a list in descending order in Python?", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-17", "a": "What is the maximum daily dose of ibuprofen for adults?", "b": "What is the maximum daily dose of ibuprofen for children?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-18", "a": "How do I make a cup of green tea?", "b": "How do I make a cup of black tea?", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-19", "a": "What does HTTP status 404 mean?", "b": "What does HTTP status 403 mean?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-20", "a": "How many days are in a leap year?", "b": "How many days are in a non-leap year?", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-21", "a": "Write a haiku about autumn.", "b": "Write a haiku about spring.", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-22", "a": "How do I check my Python version?", "b": "How do I check my Node version?", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-23", "a": "What is the chemical symbol for gold?", "b": "What is the chemical symbol for silver?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-24", "a": "How do I read a CSV file in pandas?", "b": "How do I write a CSV file in pandas?", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-25", "a": "Recommend a good book on habits.", "b": "Recommend a good book on productivity.", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-26", "a": "What is the time complexity of binary search?", "b": "What is the time complexity of linear search?", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-27", "a": "How do I create a branch in git?", "b": "How do I delete a branch in git?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-28", "a": "Is 17 a prime number?", "b": "Is 21 a prime number?", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-29", "a": "What is 15% of 200?", "b": "What is 20% of 150?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-30", "a": "How long should I boil an egg for a soft yolk?", "b": "How long should I boil an egg for a hard yolk?", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-31", "a": "Who was the first president of the United States?", "b": "Who was the second president of the United States?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-32", "a": "What is the distance from the Earth to the Moon?", "b": "What is the distance from the Earth to the Sun?", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-33", "a": "How do I convert a string to an integer in JavaScript?", "b": "How do I convert an integer to a string in JavaScript?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-34", "a": "What are the side effects of caffeine?", "b": "What are the benefits of caffeine?", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-35", "a": "Explain the difference between a list and a tuple in Python.", "b": "Explain the difference between a list and a set in Python.", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-36", "a": "Book a table for two at 7pm.", "b": "Book a table for four at 7pm.", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-37", "a": "What is the currency of Sweden?", "b": "What is the currency of Switzerland?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-38", "a": "How do I enable dark mode on iPhone?", "b": "How do I disable dark mode on iPhone?", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-39", "a": "What is the freezing point of water in Fahrenheit?", "b": "What is the freezing point of water in Kelvin?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-40", "a": "Summarize the plot of Hamlet.", "b": "Summarize the plot of Macbeth.", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-41", "a": "Can dogs eat grapes?", "b": "Can dogs eat blueberries?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-42", "a": "What's the difference between TCP and UDP?", "b": "What's the difference between HTTP and HTTPS?", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-43", "a": "How do I make my code faster in Python?", "b": "How do I make my code faster in Rust?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-44", "a": "Give me three tips for better sleep.", "b": "Give me three tips for better focus.", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-45", "a": "What does 'ephemeral' mean?", "b": "What does 'eternal' mean?", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-46", "a": "How many bones are in the human body?", "b": "How many muscles are in the human body?", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-47", "a": "I want to cancel my subscription.", "b": "I want to upgrade my subscription.", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "hard-48", "a": "What is the GDP of Germany?", "b": "What is the GDP of France?", "same": false, "category": "hard_negative", "split": "dev"}
+{"id": "hard-49", "a": "Explain recursion simply.", "b": "Explain iteration simply.", "same": false, "category": "hard_negative", "split": "test"}
+{"id": "rela-00", "a": "What is the capital of France?", "b": "What is the population of France?", "same": false, "category": "related", "split": "dev"}
+{"id": "rela-01", "a": "How do I install Docker?", "b": "What is Docker used for?", "same": false, "category": "related", "split": "test"}
+{"id": "rela-02", "a": "What is photosynthesis?", "b": "Why are plants green?", "same": false, "category": "related", "split": "dev"}
+{"id": "rela-03", "a": "How do I learn Python?", "b": "What is Python used for?", "same": false, "category": "related", "split": "test"}
+{"id": "rela-04", "a": "Who painted the Mona Lisa?", "b": "Where is the Mona Lisa displayed?", "same": false, "category": "related", "split": "dev"}
+{"id": "rela-05", "a": "What are the symptoms of the flu?", "b": "How is the flu treated?", "same": false, "category": "related", "split": "test"}
+{"id": "rela-06", "a": "How do I make pancakes?", "b": "What should I put on pancakes?", "same": false, "category": "related", "split": "dev"}
+{"id": "rela-07", "a": "When was the Eiffel Tower built?", "b": "How tall is the Eiffel Tower?", "same": false, "category": "related", "split": "test"}
+{"id": "rela-08", "a": "How does a car engine work?", "b": "How often should I change my car's oil?", "same": false, "category": "related", "split": "dev"}
+{"id": "rela-09", "a": "What is a black hole?", "b": "How are black holes formed?", "same": false, "category": "related", "split": "test"}
+{"id": "rela-10", "a": "What is the speed of light?", "b": "Can anything travel faster than light?", "same": false, "category": "related", "split": "dev"}
+{"id": "rela-11", "a": "How do I start running?", "b": "How many calories does running burn?", "same": false, "category": "related", "split": "test"}
+{"id": "rela-12", "a": "What is Bitcoin?", "b": "How do I buy Bitcoin?", "same": false, "category": "related", "split": "dev"}
+{"id": "rela-13", "a": "What does a product manager do?", "b": "How do I become a product manager?", "same": false, "category": "related", "split": "test"}
+{"id": "rela-14", "a": "How do I write a resume?", "b": "How long should a resume be?", "same": false, "category": "related", "split": "dev"}
+{"id": "rela-15", "a": "What is the GDP of Japan?", "b": "What is Japan's main export?", "same": false, "category": "related", "split": "test"}
+{"id": "rela-16", "a": "How do I train a puppy to sit?", "b": "What should I feed a puppy?", "same": false, "category": "related", "split": "dev"}
+{"id": "rela-17", "a": "What is the Pythagorean theorem?", "b": "Who was Pythagoras?", "same": false, "category": "related", "split": "test"}
+{"id": "rela-18", "a": "How do vaccines work?", "b": "Are vaccines safe for infants?", "same": false, "category": "related", "split": "dev"}
+{"id": "rela-19", "a": "What is the stock market?", "b": "How do I buy stocks?", "same": false, "category": "related", "split": "test"}
+{"id": "rela-20", "a": "How do I cook rice?", "b": "Is brown rice healthier than white rice?", "same": false, "category": "related", "split": "dev"}
+{"id": "rela-21", "a": "What is climate change?", "b": "What can individuals do about climate change?", "same": false, "category": "related", "split": "test"}
+{"id": "rela-22", "a": "How do I use git rebase?", "b": "What is the difference between git rebase and git merge?", "same": false, "category": "related", "split": "dev"}
+{"id": "rela-23", "a": "What is the Great Wall of China?", "b": "How long is the Great Wall of China?", "same": false, "category": "related", "split": "test"}
+{"id": "rela-24", "a": "What causes earthquakes?", "b": "How are earthquakes measured?", "same": false, "category": "related", "split": "dev"}
+{"id": "unre-00", "a": "How do I reverse a list in Python?", "b": "What is the capital of Peru?", "same": false, "category": "unrelated", "split": "dev"}
+{"id": "unre-01", "a": "Write a poem about the sea.", "b": "How many legs does a spider have?", "same": false, "category": "unrelated", "split": "test"}
+{"id": "unre-02", "a": "What is inflation?", "b": "How do I fix a flat bike tire?", "same": false, "category": "unrelated", "split": "dev"}
+{"id": "unre-03", "a": "Recommend a sci-fi movie.", "b": "What is the boiling point of ethanol?", "same": false, "category": "unrelated", "split": "test"}
+{"id": "unre-04", "a": "How do I tie a tie?", "b": "Explain quantum entanglement.", "same": false, "category": "unrelated", "split": "dev"}
+{"id": "unre-05", "a": "What's 2+2?", "b": "Who discovered penicillin?", "same": false, "category": "unrelated", "split": "test"}
+{"id": "unre-06", "a": "Best way to clean a cast iron pan?", "b": "What is Kubernetes?", "same": false, "category": "unrelated", "split": "dev"}
+{"id": "unre-07", "a": "How tall is the Eiffel Tower?", "b": "How do I bake sourdough bread?", "same": false, "category": "unrelated", "split": "test"}
+{"id": "unre-08", "a": "Translate 'thank you' into Japanese.", "b": "What is the speed of sound?", "same": false, "category": "unrelated", "split": "dev"}
+{"id": "unre-09", "a": "What is a mortgage?", "b": "Name the planets in order.", "same": false, "category": "unrelated", "split": "test"}
+{"id": "unre-10", "a": "How do I meditate?", "b": "What's the syntax for a SQL join?", "same": false, "category": "unrelated", "split": "dev"}
+{"id": "unre-11", "a": "Who won the 2018 World Cup?", "b": "How do I grow tomatoes?", "same": false, "category": "unrelated", "split": "test"}
+{"id": "unre-12", "a": "What is the Krebs cycle?", "b": "Suggest a name for a cat.", "same": false, "category": "unrelated", "split": "dev"}
+{"id": "unre-13", "a": "How do I change a car tire?", "b": "What does 'ubiquitous' mean?", "same": false, "category": "unrelated", "split": "test"}
+{"id": "unre-14", "a": "What is a neural network?", "b": "How long do elephants live?", "same": false, "category": "unrelated", "split": "dev"}

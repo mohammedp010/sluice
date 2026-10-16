@@ -117,13 +117,13 @@ async def test_client_disconnect_closes_upstream_and_settles():
         finally:
             seen["closed"] = True
 
-    async def on_done(usage, chars, outcome):
-        seen["done"] = (usage, chars, outcome)
+    async def on_done(r):
+        seen["done"] = (r.usage, r.text, r.outcome)
 
     gen = _sse("id", 0, "m", None, upstream(), on_done)
     await anext(gen), await anext(gen)  # role frame + one content frame
     await gen.aclose()  # what the server does when the client goes away
-    assert seen == {"closed": True, "done": (None, 2, "client_disconnected")}
+    assert seen == {"closed": True, "done": (None, "t0", "client_disconnected")}
 
 
 async def test_max_completion_tokens_and_default_cap():

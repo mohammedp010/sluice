@@ -5,7 +5,7 @@ Free to run: mock + local Ollama by default; paid providers are blocked unless o
 
 **Done so far:** Phase 1 (gateway + streaming) · Phase 2 (fallback, retries, circuit breaker, chaos tests) ·
 Phase 3 (virtual keys, RPM/TPM limits, budgets, kill switch) · Phase 4 (OpenTelemetry traces + metrics,
-per-team cost ledger).
+per-team cost ledger) · Phase 5 (semantic cache with a lexical guard; threshold from a labelled eval).
 
 ## Quick start
 ```bash
@@ -19,6 +19,10 @@ Observability: every response has `x-sluice-trace-id`; `GET /metrics` (Prometheu
 `python -m sluice.report --by team|app|key|model|provider|day` for cost; traces in Jaeger with
 `docker compose up -d jaeger` and `telemetry.traces: otlp` in the policy (ADR 0004).
 
+Semantic cache: `ollama pull nomic-embed-text`, then opt a route in with `cache: true`. Responses
+carry `x-sluice-cache: hit|miss|skip`; `Cache-Control: no-cache` / `no-store` are honoured.
+Threshold evidence: `bench/results/cache-eval.md` (ADR 0005).
+
 Tests: `redis-server --port 6399 --save "" &` then `.venv/bin/pytest` (Redis tests skip if it's absent).
-Benchmarks: `bench/chaos.py`, `bench/ratelimit.py`, `bench/trace_demo.py` → `bench/results/`.
+Benchmarks: `bench/chaos.py`, `bench/ratelimit.py`, `bench/trace_demo.py`, `bench/cache_eval.py` → `bench/results/`.
 Design decisions: `docs/decisions/`. Per-phase notes: `docs/learning/`.

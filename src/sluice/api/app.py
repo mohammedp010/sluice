@@ -18,9 +18,11 @@ from opentelemetry.propagate import extract
 from opentelemetry.trace import Span, SpanKind, Status, StatusCode
 
 from ..auth.keys import KeyStore, VirtualKey
+from ..cache.semantic import CachedAnswer, Probe, SemanticCache
 from ..config import (
     Settings,
     build_breakers,
+    build_cache,
     build_providers,
     build_state,
     load_settings,
@@ -54,7 +56,18 @@ class RequestLog:
     finish_reason: str | None = None
     status: int = 200
     outcome: str = "ok"  # ok | an error code | stream_interrupted | client_disconnected
+    cache: str | None = None  # hit | miss | skip, once the cache stage ran
     done: bool = False
+
+
+@dataclass
+class StreamResult:
+    """How a stream ended, handed to on_done by _sse."""
+
+    usage: Usage | None
+    text: str
+    finish_reason: str | None
+    outcome: str  # ok | stream_interrupted | client_disconnected
 
 
 def create_app(
@@ -65,6 +78,7 @@ def create_app(
     keystore: KeyStore | None = None,
     telemetry: Telemetry | None = None,
     ledger: UsageLedger | None = None,
+    cache: SemanticCache | None = None,
 ):
     settings = settings or load_settings(os.environ.get("SLUICE_POLICY", DEFAULT_POLICY))
     tcfg = settings.telemetry
@@ -73,6 +87,7 @@ def create_app(
     if ledger is None and tcfg.ledger:
         ledger = UsageLedger(settings.auth.db_path)
     tracer = tel.tracer()
+    cache = cache or build_cache(settings)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -80,6 +95,8 @@ def create_app(
         for p in app.state.providers.values():
             await p.aclose()
         await app.state.shared.aclose()
+        if cache and hasattr(cache.embedder, "aclose"):
+            await cache.embedder.aclose()
         tel.shutdown()
 
     app = FastAPI(title="Sluice", lifespan=lifespan)
@@ -89,6 +106,7 @@ def create_app(
     app.state.keys = keystore or (KeyStore(settings.auth.db_path) if settings.auth.enabled else None)
     app.state.telemetry = tel
     app.state.ledger = ledger
+    app.state.cache = cache
 
     paid = frozenset(n for n, c in settings.providers.items() if c.paid)
 
@@ -164,6 +182,8 @@ def create_app(
             finish(log)
             raise
         resp.headers["x-sluice-trace-id"] = format(span.get_span_context().trace_id, "032x")
+        if log.cache:
+            resp.headers["x-sluice-cache"] = log.cache
         if not isinstance(resp, StreamingResponse):  # streams finish in their on_done
             log.status = resp.status_code
             if resp.status_code >= 400:
@@ -215,15 +235,52 @@ def create_app(
             if not ok:
                 return _rate_limited("tokens", retry)
 
-        with tracer.start_as_current_span("sluice.cache", attributes={"sluice.cache.result":
-                                                                      "disabled"}):
-            pass  # Phase 5
-
-        # --- 4. do the work ----------------------------------------------------------------
         params = ChatParams(model="", messages=messages, temperature=req.temperature,
                             max_tokens=max_tokens or settings.limits.default_max_tokens)
         cid = f"chatcmpl-{uuid.uuid4().hex[:24]}"
         created = int(time.time())
+
+        # --- 4. semantic cache (after limits: a hit still counts as a request) ---------------
+        with tracer.start_as_current_span("sluice.cache") as cs:
+            if cache is None or not route.cache:
+                probe = Probe("skip", "disabled")
+            else:
+                probe = await cache.probe(
+                    tenant=key.team or f"key:{key.id}", model=req.model, messages=messages,
+                    temperature=req.temperature, max_tokens=params.max_tokens,
+                    cache_control=request.headers.get("cache-control", ""))
+            cs.set_attribute("sluice.cache.result", probe.result)
+            if probe.reason:
+                cs.set_attribute("sluice.cache.reason", probe.reason)
+            if probe.match:
+                cs.set_attribute("sluice.cache.similarity", round(probe.match.similarity, 4))
+        log.cache = probe.result
+        metrics.cache_lookups.add(1, {"sluice.cache.result": probe.result,
+                                      "sluice.cache.reason": probe.reason or ""})
+        if (ans := probe.answer) is not None:
+            await sh.adjust(tpm_bucket, key.tpm, est)  # nothing went upstream: refund it all
+            log.trail, log.finish_reason = Trail(provider="cache"), ans.finish_reason
+            headers = {**_trail_headers(log.trail),
+                       "x-sluice-cache-similarity": f"{probe.match.similarity:.4f}"}
+            if not req.stream:
+                return _completion(cid, created, req.model, ans.content, ans.finish_reason,
+                                   ans.usage, headers)
+
+            async def replay_done(r: StreamResult) -> None:
+                log.outcome = r.outcome
+                finish(log)
+
+            return _stream_response(
+                _sse(cid, created, req.model, Chunk(content=ans.content),
+                     _one(Chunk(finish_reason=ans.finish_reason, usage=ans.usage)), replay_done),
+                headers)
+
+        def remember(content: str, finish_reason: str | None, usage: Usage) -> None:
+            answer = CachedAnswer(messages[-1].content, content, finish_reason or "stop", usage)
+            if cache and cache.put(probe, answer):
+                log.span.add_event("sluice.cache.stored")
+
+        # --- 5. do the work ----------------------------------------------------------------
 
         async def settle(trail: Trail | None, usage: Usage | None) -> None:
             """Reconcile the estimate with reality: fix the TPM bucket and record spend."""
@@ -245,23 +302,9 @@ def create_app(
                 if not usage.total_tokens:  # upstream reported no usage: bill an estimate, not 0
                     usage = Usage(prompt_est, len(c.content) // 4)
                 await settle(trail, usage)
-                return JSONResponse(
-                    {
-                        "id": cid, "object": "chat.completion", "created": created,
-                        "model": req.model,
-                        "choices": [{
-                            "index": 0,
-                            "message": {"role": "assistant", "content": c.content},
-                            "finish_reason": c.finish_reason,
-                        }],
-                        "usage": {
-                            "prompt_tokens": usage.prompt_tokens,
-                            "completion_tokens": usage.completion_tokens,
-                            "total_tokens": usage.total_tokens,
-                        },
-                    },
-                    headers=_trail_headers(trail),
-                )
+                remember(c.content, c.finish_reason, usage)
+                return _completion(cid, created, req.model, c.content, c.finish_reason, usage,
+                                   _trail_headers(trail))
             # Streaming: the executor fails over until the first chunk arrives. After that the
             # status line is sent and failure can only be signalled in-stream (ADR 0001).
             (first, upstream), trail = await ex.stream(route, params)
@@ -276,23 +319,22 @@ def create_app(
             await settle(None, None)
             return _upstream_error(e)
 
-        async def on_done(usage: Usage | None, emitted_chars: int, outcome: str) -> None:
+        async def on_done(r: StreamResult) -> None:
             try:
-                if outcome == "stream_interrupted":
+                if r.outcome == "stream_interrupted":
                     ex.report_stream_failure(trail.provider)
-                if usage is None:  # no usage reported (error / disconnect): bill what we saw
-                    usage = Usage(prompt_est, emitted_chars // 4)
+                # no usage reported (error / disconnect): bill what we saw
+                usage = r.usage or Usage(prompt_est, len(r.text) // 4)
                 await settle(trail, usage)
+                if r.outcome == "ok":  # only complete answers are worth replaying
+                    remember(r.text, r.finish_reason, usage)
             finally:
-                log.outcome = outcome
+                log.outcome = r.outcome
+                log.finish_reason = r.finish_reason
                 finish(log)
 
-        return StreamingResponse(
-            _sse(cid, created, req.model, first, upstream, on_done),
-            media_type="text/event-stream",
-            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no",
-                     **_trail_headers(trail)},
-        )
+        return _stream_response(_sse(cid, created, req.model, first, upstream, on_done),
+                                _trail_headers(trail))
 
     def finish(log: RequestLog) -> None:
         """Close the request span and emit metrics + the ledger row. Exactly once."""
@@ -333,6 +375,8 @@ def create_app(
             if log.cost_micro:
                 metrics.cost.add(log.cost_micro / 1e6,
                                  {sc.REQUEST_MODEL: log.model, "sluice.provider": provider})
+        if log.cache:
+            span.set_attribute("sluice.cache.result", log.cache)
         if log.status >= 500 or log.outcome == "stream_interrupted":
             span.set_status(Status(StatusCode.ERROR, log.outcome))
         secs = time.monotonic() - log.t0
@@ -374,17 +418,20 @@ def _frame(cid: str, created: int, model: str, delta: dict, finish: str | None) 
 
 async def _sse(
     cid: str, created: int, model: str, first: Chunk | None, rest: AsyncIterator[Chunk],
-    on_done: Callable[[Usage | None, int, str], Awaitable[None]],
+    on_done: Callable[[StreamResult], Awaitable[None]],
 ) -> AsyncIterator[str]:
     usage: Usage | None = None
-    chars = 0
+    text: list[str] = []
+    finish_reason: str | None = None
     outcome = "client_disconnected"  # until the stream proves otherwise
     try:
         yield _frame(cid, created, model, {"role": "assistant", "content": ""}, None)
         async for chunk in _chain([first] if first else [], rest):
             if chunk.usage:
                 usage = chunk.usage
-            chars += len(chunk.content)
+            if chunk.finish_reason:
+                finish_reason = chunk.finish_reason
+            text.append(chunk.content)
             if chunk.content or chunk.finish_reason:
                 delta = {"content": chunk.content} if chunk.content else {}
                 yield _frame(cid, created, model, delta, chunk.finish_reason)
@@ -411,9 +458,38 @@ async def _sse(
         # still settles its accounting.
         async def finish() -> None:
             await rest.aclose()
-            await on_done(usage, chars, outcome)
+            await on_done(StreamResult(usage, "".join(text), finish_reason, outcome))
 
         await asyncio.shield(finish())
+
+
+async def _one(chunk: Chunk) -> AsyncIterator[Chunk]:
+    yield chunk
+
+
+def _completion(cid: str, created: int, model: str, content: str, finish_reason: str,
+                usage: Usage, headers: dict[str, str]) -> JSONResponse:
+    return JSONResponse(
+        {
+            "id": cid, "object": "chat.completion", "created": created, "model": model,
+            "choices": [{
+                "index": 0,
+                "message": {"role": "assistant", "content": content},
+                "finish_reason": finish_reason,
+            }],
+            "usage": {
+                "prompt_tokens": usage.prompt_tokens,
+                "completion_tokens": usage.completion_tokens,
+                "total_tokens": usage.total_tokens,
+            },
+        },
+        headers=headers,
+    )
+
+
+def _stream_response(body: AsyncIterator[str], headers: dict[str, str]) -> StreamingResponse:
+    return StreamingResponse(body, media_type="text/event-stream", headers={
+        "Cache-Control": "no-cache", "X-Accel-Buffering": "no", **headers})
 
 
 async def _chain(head: list[Chunk], tail: AsyncIterator[Chunk]) -> AsyncIterator[Chunk]:

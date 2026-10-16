@@ -50,6 +50,7 @@ class Target(BaseModel):
 class Route(BaseModel):
     chain: list[Target] = Field(min_length=1)  # tried in order
     deadline_s: float = 60.0  # total budget across all attempts
+    cache: bool = False  # semantic cache opt-in, per route (see CacheConfig)
 
     @model_validator(mode="before")
     @classmethod
@@ -90,9 +91,25 @@ class TelemetryConfig(BaseModel):
     ledger: bool = True  # one usage row per request in auth.db_path (cost attribution)
 
 
+class CacheConfig(BaseModel):
+    enabled: bool = False
+    embed_base_url: str = "http://localhost:11434/v1"  # any OpenAI-compatible /embeddings
+    embed_model: str = "nomic-embed-text"
+    embed_prefix: str = "clustering: "  # task prefix nomic models are trained with
+    # Cosine similarity needed for a hit, chosen together with the model, prefix and guard by
+    # bench/cache_eval.py (see bench/results/cache-eval.md). Change one, re-run the eval.
+    threshold: float = Field(default=0.895, gt=0, le=1)
+    # veto hits between near-identical prompts (<= this many differing words); None = off
+    guard_max_diff: int | None = 2
+    ttl_s: float = 3600
+    max_entries: int = 10_000
+    max_temperature: float = 0.0  # requests asking for more randomness than this skip the cache
+
+
 class Settings(BaseModel):
     auth: AuthConfig = Field(default_factory=AuthConfig)
     telemetry: TelemetryConfig = Field(default_factory=TelemetryConfig)
+    cache: CacheConfig = Field(default_factory=CacheConfig)
     state: StateConfig = Field(default_factory=StateConfig)
     limits: LimitsConfig = Field(default_factory=LimitsConfig)
     providers: dict[str, ProviderConfig]
@@ -117,6 +134,20 @@ def build_state(settings: Settings):
     if settings.state.backend == "redis":
         return RedisState(settings.state.redis_url)
     return MemoryState()
+
+
+def build_cache(settings: Settings):
+    if not settings.cache.enabled:
+        return None
+    from .cache.embed import OpenAICompatEmbedder
+    from .cache.semantic import SemanticCache
+    from .cache.store import MemoryVectorStore
+
+    c = settings.cache
+    return SemanticCache(
+        OpenAICompatEmbedder(c.embed_base_url, c.embed_model, c.embed_prefix),
+        MemoryVectorStore(c.max_entries), c.threshold, c.ttl_s, c.max_temperature,
+        c.guard_max_diff)
 
 
 def build_breakers(settings: Settings) -> dict:

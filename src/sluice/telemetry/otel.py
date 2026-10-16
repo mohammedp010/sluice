@@ -91,6 +91,8 @@ class Metrics:
             sc.CLIENT_TOKEN_USAGE, "{token}", "Tokens per served request",
             explicit_bucket_boundaries_advisory=sc.TOKEN_BUCKETS)
         self.cost = meter.create_counter("sluice.cost", "USD", "Spend from the route price table")
+        self.cache_lookups = meter.create_counter(
+            "sluice.cache.lookups", "{lookup}", "Semantic cache lookups by result and skip reason")
         self.fallbacks = meter.create_counter(
             "sluice.fallbacks", "{fallback}", "Times a target was abandoned for the next one")
 

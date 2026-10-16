@@ -13,6 +13,7 @@ dependencies = [
     "opentelemetry-sdk>=1.30",
     "opentelemetry-exporter-otlp-proto-http>=1.30",
     "opentelemetry-exporter-prometheus>=0.51b0",  # only ever published as betas
+    "numpy>=1.26",
 ]
 
 [project.optional-dependencies]
