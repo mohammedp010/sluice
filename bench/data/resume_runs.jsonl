@@ -1,0 +1,166 @@
+{"key": ["ref", "count40"], "text": "1. 1.\n2. 2.\n3. 3.\n4. 4.\n5. 5.\n6. 6.\n7. 7.\n8. 8.\n9. 9.\n10. 10.\n11. 11.\n12. 12.\n13. 13.\n14. 14.\n15. 15.\n16. 16.\n17. 17.\n18. 18.\n19. 19.\n20. 20.\n21. 21.\n22. 22.\n23. 23.\n24. 24.\n25. 25.\n26. 26.\n27. 27.\n28. 28.\n29. 29.\n30. 30.\n31. 31.\n32. 32.\n33. 33.\n34. 34.\n35. 35.\n36. 36.\n37. 37.\n38. 38.\n39. 39.\n40. 40."}
+{"key": ["ref", "animals"], "text": "1. Cat\n2. Dog\n3. Elephant\n4. Fox\n5. Giraffe\n6. Hippopotamus\n7. Iguana\n8. Jellyfish\n9. Kangaroo\n10. Koala\n11. Lion\n12. Monkey\n13. Octopus\n14. Owl\n15. Panda"}
+{"key": ["ref", "months"], "text": "1. January\n2. February\n3. March\n4. April\n5. May\n6. June\n7. July\n8. August\n9. September\n10. October\n11. November\n12. December"}
+{"key": ["ref", "days"], "text": "1. Monday.\n2. Tuesday.\n3. Wednesday.\n4. Thursday.\n5. Friday.\n6. Saturday.\n7. Sunday."}
+{"key": ["ref", "bwords"], "text": "1. Banana\n2. Bear\n3. Book\n4. Bridge\n5. Bubble\n6. Bunny\n7. Bus\n8. Baby\n9. Ball\n10. Bird\n11. Boat\n12. Box\n13. Boy\n14. Building\n15. Bug\n16. Bucket\n17. Butterfly\n18. Broom\n19. Bubblegum\n20. Bookshelf"}
+{"key": ["ref", "europe"], "text": "1. United Kingdom\n2. France\n3. Germany\n4. Italy\n5. Spain\n6. Poland\n7. Russia\n8. Greece\n9. Portugal\n10. Sweden"}
+{"key": ["ref", "primes"], "text": "1. 2.\n2. 3.\n3. 5.\n4. 7.\n5. 11.\n6. 13.\n7. 17.\n8. 19.\n9. 23.\n10. 29.\n11. 31.\n12. 37.\n13. 41.\n14. 43.\n15. 47."}
+{"key": ["ref", "sleep"], "text": "1. Establish a regular sleep schedule.\n2. Create a relaxing bedtime routine.\n3. Keep your bedroom cool, quiet, and dark.\n4. Limit screen time before bed.\n5. Avoid heavy meals close to bedtime.\n6. Exercise regularly but not right before bed.\n7. Manage stress through relaxation techniques.\n8. Use pillows and bedding that support good posture.\n9. Consider a white noise machine for better sleep environment.\n10. Keep your mattress comfortable and supportive.\n11. Limit daytime naps, especially in the afternoon.\n12. Avoid caffeine and alcohol close to bedtime."}
+{"key": ["ref", "alphabet"], "text": "1. A\n2. B\n3. C\n4. D\n5. E\n6. F\n7. G\n8. H\n9. I\n10. J\n11. K\n12. L\n13. M\n14. N\n15. O\n16. P\n17. Q\n18. R\n19. S\n20. T\n21. U\n22. V\n23. W\n24. X\n25. Y\n26. Z"}
+{"key": ["ref", "langs"], "text": "1. C\n2. C++\n3. Java\n4. Python\n5. JavaScript\n6. Ruby\n7. PHP\n8. Swift\n9. Go\n10. Rust\n11. Kotlin\n12. TypeScript\n13. Scala\n14. R\n15. SQL"}
+{"key": ["ref", "colors"], "text": "1. red\n2. blue\n3. green\n4. yellow\n5. purple\n6. orange\n7. pink\n8. gray\n9. white\n10. black"}
+{"key": ["ref", "planets"], "text": "1. Mercury\n2. Venus\n3. Earth\n4. Mars\n5. Jupiter\n6. Saturn\n7. Uranus\n8. Neptune"}
+{"key": ["ref", "fruits"], "text": "1. Apple\n2. Banana\n3. Cherry\n4. Date\n5. Elderberry\n6. Fig\n7. Grape\n8. Honeydew\n9. Kiwi\n10. Lemon\n11. Lime\n12. Mango\n13. Nutmeg\n14. Orange\n15. Papaya"}
+{"key": ["ref", "instruments"], "text": "1. <numberine. Flute\n2. <numbertwo. Drum\n3. <ninetwo. Xylophone\n4. <twotwo. Trumpet\n5. <fivethree. Clarinet\n6. <sixthree. Cello\n7. <seventhree. Piano\n8. <eighthree. Violin\n9. <ninefour. Saxophone\n10. <tenfour. Guitar\n11. <elevenfive. Harp\n12. <twelvefive. Tambourine"}
+{"key": ["ref", "sevens"], "text": "7. Seven\n14. Fourteen\n21. Twenty-one\n28. Twenty-eight\n35. Thirty-five\n42. Forty-two\n49. Forty-nine\n56. Fifty-six\n63. Sixty-three\n70. Seventy\n77. Seventy-seven\n84. Eighty-four\n91. Ninety-one\n98. Ninety-eight"}
+{"key": ["ref", "tea"], "text": "1. Boil water on stove\n2. Measure desired amount of tea leaves or loose tea\n3. Prepare teacup and saucer if using\n4. Pour boiling water into teacup\n5. Let the water cool to brewing temperature\n6. Add measured tea to hot water in cup\n7. Steep for desired time (usually 2-5 minutes)\n8. Remove tea leaves or strain loose tea from cup\n9. Add sweetener and milk if preferred\n10. Stir gently before serving"}
+{"key": ["restart", "count40", "qwen2.5:3b"], "text": "1. 1.\n2. 2.\n3. 3.\n4. 4.\n5. 5.\n6. 6.\n7. 7.\n8. 8.\n9. 9.\n10. 10.\n11. 11.\n12. 12.\n13. 13.\n14. 14.\n15. 15.\n16. 16.\n17. 17.\n18. 18.\n19. 19.\n20. 20.\n21. 21.\n22. 22.\n23. 23.\n24. 24.\n25. 25.\n26. 26.\n27. 27.\n28. 28.\n29. 29.\n30. 30.\n31. 31.\n32. 32.\n33. 33.\n34. 34.\n35. 35.\n36. 36.\n37. 37.\n38. 38.\n39. 39.\n40. 40."}
+{"key": ["prefill", "count40", "qwen2.5:3b", 0.3], "text": "14.\n15. 15.\n16. 16.\n17. 17.\n18. 18.\n19. 19.\n20. 20.\n21. 21.\n22. 22.\n23. 23.\n24. 24.\n25. 25.\n26. 26.\n27. 27.\n28. 28.\n29. 29.\n30. 30.\n31. 31.\n32. 32.\n33. 33.\n34. 34.\n35. 35.\n36. 36.\n37. 37.\n38. 38.\n39. 39.\n40. 40."}
+{"key": ["instruct", "count40", "qwen2.5:3b", 0.3], "text": "15. 15.\n16. 16.\n17. 17.\n18. 18.\n19. 19.\n20. 20.\n21. 21.\n22. 22.\n23. 23.\n24. 24.\n25. 25.\n26. 26.\n27. 27.\n28. 28.\n29. 29.\n30. 30.\n31. 31.\n32. 32.\n33. 33.\n34. 34.\n35. 35.\n36. 36.\n37. 37.\n38. 38.\n39. 39.\n40. 40."}
+{"key": ["prefill", "count40", "qwen2.5:3b", 0.65], "text": "28. 28.\n29. 29.\n30. 30.\n31. 31.\n32. 32.\n33. 33.\n34. 34.\n35. 35.\n36. 36.\n37. 37.\n38. 38.\n39. 39.\n40. 40."}
+{"key": ["instruct", "count40", "qwen2.5:3b", 0.65], "text": "28. 28.\n29. 29.\n30. 30.\n31. 31.\n32. 32.\n33. 33.\n34. 34.\n35. 35.\n36. 36.\n37. 37.\n38. 38.\n39. 39.\n40. 40."}
+{"key": ["restart", "animals", "qwen2.5:3b"], "text": "1. Cat\n2. Dog\n3. Elephant\n4. Fox\n5. Giraffe\n6. Hippopotamus\n7. Iguana\n8. Jellyfish\n9. Kangaroo\n10. Koala\n11. Lion\n12. Monkey\n13. Octopus\n14. Owl\n15. Panda"}
+{"key": ["prefill", "animals", "qwen2.5:3b", 0.3], "text": " Hedgehog\n7. Iguana\n8. Jellyfish\n9. Kangaroo\n10. Koala\n11. Lion\n12. Monkey\n13. Octopus\n14. Owl\n15. Penguin"}
+{"key": ["instruct", "animals", "qwen2.5:3b", 0.3], "text": "7. Giraffe\n8. Hippopotamus\n9. Iguana\n10. Jay\n11. Kangaroo\n12. Koala\n13. Lion\n14. Monkey\n15. Octopus"}
+{"key": ["prefill", "animals", "qwen2.5:3b", 0.65], "text": "11. Lion\n12. Monkey\n13. Octopus\n14. Owl\n15. Panda"}
+{"key": ["instruct", "animals", "qwen2.5:3b", 0.65], "text": "11. Kiwi\n12. Lemur\n13. Meerkat\n14. Octopus\n15. Owl"}
+{"key": ["restart", "months", "qwen2.5:3b"], "text": "1. January\n2. February\n3. March\n4. April\n5. May\n6. June\n7. July\n8. August\n9. September\n10. October\n11. November\n12. December"}
+{"key": ["prefill", "months", "qwen2.5:3b", 0.3], "text": "5. May\n6. June\n7. July\n8. August\n9. September\n10. October\n11. November\n12. December"}
+{"key": ["instruct", "months", "qwen2.5:3b", 0.3], "text": "5. May\n6. June\n7. July\n8. August\n9. September\n10. October\n11. November\n12. December"}
+{"key": ["prefill", "months", "qwen2.5:3b", 0.65], "text": "10. October\n11. November\n12. December"}
+{"key": ["instruct", "months", "qwen2.5:3b", 0.65], "text": "10. October\n11. November\n12. December"}
+{"key": ["restart", "days", "qwen2.5:3b"], "text": "1. Monday.\n2. Tuesday.\n3. Wednesday.\n4. Thursday.\n5. Friday.\n6. Saturday.\n7. Sunday."}
+{"key": ["prefill", "days", "qwen2.5:3b", 0.3], "text": " Wednesday.\n4. Thursday.\n5. Friday.\n6. Saturday.\n7. Sunday."}
+{"key": ["instruct", "days", "qwen2.5:3b", 0.3], "text": "4. Wednesday.\n5. Thursday.\n6. Friday.\n7. Saturday."}
+{"key": ["prefill", "days", "qwen2.5:3b", 0.65], "text": "6. Saturday.\n7. Sunday."}
+{"key": ["instruct", "days", "qwen2.5:3b", 0.65], "text": "6. Saturday.\n7. Sunday."}
+{"key": ["restart", "bwords", "qwen2.5:3b"], "text": "1. Banana\n2. Bear\n3. Book\n4. Bridge\n5. Bubble\n6. Bunny\n7. Bus\n8. Baby\n9. Ball\n10. Bird\n11. Boat\n12. Box\n13. Boy\n14. Building\n15. Bug\n16. Bucket\n17. Butterfly\n18. Broom\n19. Bubblegum\n20. Bookshelf"}
+{"key": ["prefill", "bwords", "qwen2.5:3b", 0.3], "text": " Bag\n8. Ball\n9. Bee\n10. Bell\n11. Bean\n12. Boat\n13. Box\n14. Boy\n15. Brick\n16. Bird\n17. Bike\n18. Bookshelf\n19. Bowl\n20. Border"}
+{"key": ["instruct", "bwords", "qwen2.5:3b", 0.3], "text": "8. Butterfly\n9. Bucket\n10. Box\n11. Bread\n12. Bird\n13. Boat\n14. Bell\n15. Bee\n16. Bag\n17. Ball\n18. Bean\n19. Bear\n20. Bubblegum"}
+{"key": ["prefill", "bwords", "qwen2.5:3b", 0.65], "text": " Bug\n16. Bucket\n17. Bookshelf\n18. Boots\n19. Border\n20. Bubblegum"}
+{"key": ["instruct", "bwords", "qwen2.5:3b", 0.65], "text": "Boys"}
+{"key": ["restart", "europe", "qwen2.5:3b"], "text": "1. United Kingdom\n2. France\n3. Germany\n4. Italy\n5. Spain\n6. Poland\n7. Russia\n8. Greece\n9. Portugal\n10. Sweden"}
+{"key": ["prefill", "europe", "qwen2.5:3b", 0.3], "text": "4. Italy\n5. Spain\n6. Poland\n7. Russia\n8. Greece\n9. Portugal\n10. Sweden"}
+{"key": ["instruct", "europe", "qwen2.5:3b", 0.3], "text": "4. Italy\n5. Spain\n6. Poland\n7. Belgium\n8. Greece\n9. Sweden\n10. Hungary"}
+{"key": ["prefill", "europe", "qwen2.5:3b", 0.65], "text": " Czech Republic\n8. Hungary\n9. Romania\n10. Greece"}
+{"key": ["instruct", "europe", "qwen2.5:3b", 0.65], "text": "8. Poland\n9. Romania\n10. Greece"}
+{"key": ["restart", "primes", "qwen2.5:3b"], "text": "1. 2.\n2. 3.\n3. 5.\n4. 7.\n5. 11.\n6. 13.\n7. 17.\n8. 19.\n9. 23.\n10. 29.\n11. 31.\n12. 37.\n13. 41.\n14. 43.\n15. 47."}
+{"key": ["prefill", "primes", "qwen2.5:3b", 0.3], "text": "6. 13.\n7. 17.\n8. 19.\n9. 23.\n10. 29.\n11. 31.\n12. 37.\n13. 41.\n14. 43.\n15. 47."}
+{"key": ["instruct", "primes", "qwen2.5:3b", 0.3], "text": "6. 13.\n7. 17.\n8. 19.\n9. 23.\n10. 29.\n11. 31.\n12. 37.\n13. 41.\n14. 43.\n15. 47."}
+{"key": ["prefill", "primes", "qwen2.5:3b", 0.65], "text": "31.\n12. 37.\n13. 41.\n14. 43.\n15. 47."}
+{"key": ["instruct", "primes", "qwen2.5:3b", 0.65], "text": "11. 31.\n12. 37.\n13. 41.\n14. 43.\n15. 47."}
+{"key": ["restart", "sleep", "qwen2.5:3b"], "text": "1. Establish a regular sleep schedule.\n2. Create a relaxing bedtime routine.\n3. Keep your bedroom cool, quiet, and dark.\n4. Limit screen time before bed.\n5. Avoid heavy meals close to bedtime.\n6. Exercise regularly but not right before bed.\n7. Manage stress through relaxation techniques.\n8. Use pillows and bedding that support good posture.\n9. Consider a white noise machine for better sleep environment.\n10. Keep your mattress comfortable and supportive.\n11. Limit daytime naps, especially in the afternoon.\n12. Avoid caffeine and alcohol close to bedtime."}
+{"key": ["prefill", "sleep", "qwen2.5:3b", 0.3], "text": " meals close to bedtime.\n6. Exercise regularly but not right before bed.\n7. Manage stress through relaxation techniques.\n8. Use pillows and bedding that promote comfort.\n9. Consider a sleep mask if light is an issue.\n10. Keep your phone out of the bedroom.\n11. Set realistic expectations about how much sleep you need.\n12. Seek professional help for persistent sleep issues."}
+{"key": ["instruct", "sleep", "qwen2.5:3b", 0.3], "text": "5. Avoid heavy meals close to bedtime.\n6. Exercise regularly but not right before bed.\n7. Manage stress through relaxation techniques.\n8. Limit daytime naps, especially late in the day.\n9. Consider a sleep mask if light is an issue.\n10. Use your bed only for sleeping and sex.\n11. Keep electronic devices out of the bedroom.\n12. If you can't sleep, get up and do something relaxing."}
+{"key": ["prefill", "sleep", "qwen2.5:3b", 0.65], "text": " noise machine for better sleep environment.\n10. Keep your mattress and pillow fresh and comfortable.\n11. Limit daytime naps, especially in the afternoon.\n12. Avoid caffeine and alcohol close to bedtime."}
+{"key": ["instruct", "sleep", "qwen2.5:3b", 0.65], "text": "10. Limit daytime naps to avoid nighttime sleep disruption.\n11. Avoid caffeine and alcohol close to bedtime.\n12. If you can't sleep, get out of bed and read or listen to calming music until feeling drowsy."}
+{"key": ["restart", "alphabet", "qwen2.5:3b"], "text": "1. A\n2. B\n3. C\n4. D\n5. E\n6. F\n7. G\n8. H\n9. I\n10. J\n11. K\n12. L\n13. M\n14. N\n15. O\n16. P\n17. Q\n18. R\n19. S\n20. T\n21. U\n22. V\n23. W\n24. X\n25. Y\n26. Z"}
+{"key": ["prefill", "alphabet", "qwen2.5:3b", 0.3], "text": "\u0131\n10. I\n11. J\n12. K\n13. L\n14. M\n15. N\n16. O\n17. P\n18. Q\n19. R\n20. S\n21. T\n22. U\n23. V\n24. W\n25. X\n26. Y"}
+{"key": ["instruct", "alphabet", "qwen2.5:3b", 0.3], "text": "I\nJ\nK\nL\nM\nN\nO\nP\nQ\nR\nS\nT\nU\nV\nW\nX\nY\nZ"}
+{"key": ["prefill", "alphabet", "qwen2.5:3b", 0.65], "text": " R\n19. S\n20. T\n21. U\n22. V\n23. W\n24. X\n25. Y\n26. Z"}
+{"key": ["instruct", "alphabet", "qwen2.5:3b", 0.65], "text": "R\nS\nT\nU\nV\nW\nX\nY\nZ"}
+{"key": ["restart", "langs", "qwen2.5:3b"], "text": "1. C\n2. C++\n3. Java\n4. Python\n5. JavaScript\n6. Ruby\n7. PHP\n8. Swift\n9. Go\n10. Rust\n11. Kotlin\n12. TypeScript\n13. Scala\n14. R\n15. SQL"}
+{"key": ["prefill", "langs", "qwen2.5:3b", 0.3], "text": "6. Ruby\n7. PHP\n8. Swift\n9. Go\n10. Rust\n11. Kotlin\n12. TypeScript\n13. Scala\n14. R\n15. SQL"}
+{"key": ["instruct", "langs", "qwen2.5:3b", 0.3], "text": "6. Ruby\n7. PHP\n8. Swift\n9. Rust\n10. Go\n11. Kotlin\n12. Scala\n13. TypeScript\n14. R\n15. Haskell"}
+{"key": ["prefill", "langs", "qwen2.5:3b", 0.65], "text": " Haskell\n12. Kotlin\n13. Scala\n14. R\n15. SQL"}
+{"key": ["instruct", "langs", "qwen2.5:3b", 0.65], "text": "12. Kotlin\n13. Scala\n14. Haskell\n15. R"}
+{"key": ["restart", "colors", "qwen2.5:3b"], "text": "1. red\n2. blue\n3. green\n4. yellow\n5. purple\n6. orange\n7. pink\n8. gray\n9. white\n10. black"}
+{"key": ["prefill", "colors", "qwen2.5:3b", 0.3], "text": " yellow\n5. orange\n6. purple\n7. pink\n8. brown\n9. gray\n10. white"}
+{"key": ["instruct", "colors", "qwen2.5:3b", 0.3], "text": "5. yellow\n6. purple\n7. orange\n8. pink\n9. brown\n10. gray"}
+{"key": ["prefill", "colors", "qwen2.5:3b", 0.65], "text": "ivoine\n8. gray\n9. pink\n10. brown"}
+{"key": ["instruct", "colors", "qwen2.5:3b", 0.65], "text": "8. white\n9. black\n10. gray"}
+{"key": ["restart", "planets", "qwen2.5:3b"], "text": "1. Mercury\n2. Venus\n3. Earth\n4. Mars\n5. Jupiter\n6. Saturn\n7. Uranus\n8. Neptune"}
+{"key": ["prefill", "planets", "qwen2.5:3b", 0.3], "text": " Earth\n4. Mars\n5. Jupiter\n6. Saturn\n7. Uranus\n8. Neptune"}
+{"key": ["instruct", "planets", "qwen2.5:3b", 0.3], "text": "3. Earth\n4. Mars\n5. Jupiter\n6. Saturn\n7. Uranus\n8. Neptune"}
+{"key": ["prefill", "planets", "qwen2.5:3b", 0.65], "text": " Saturn\n7. Uranus\n8. Neptune"}
+{"key": ["instruct", "planets", "qwen2.5:3b", 0.65], "text": "7. Saturn\n8. Uranus\n9. Neptune"}
+{"key": ["restart", "fruits", "qwen2.5:3b"], "text": "1. Apple\n2. Banana\n3. Cherry\n4. Date\n5. Elderberry\n6. Fig\n7. Grape\n8. Honeydew\n9. Kiwi\n10. Lemon\n11. Lime\n12. Mango\n13. Nutmeg\n14. Orange\n15. Papaya"}
+{"key": ["prefill", "fruits", "qwen2.5:3b", 0.3], "text": "6. Fig\n7. Grape\n8. Honeydew\n9. Kiwi\n10. Lemon\n11. Lime\n12. Mango\n13. Nutmeg\n14. Orange\n15. Papaya"}
+{"key": ["instruct", "fruits", "qwen2.5:3b", 0.3], "text": "6. Fig\n7. Grape\n8. Honeydew\n9. Kiwi\n10. Lemon\n11. Mango\n12. Nutmeg\n13. Orange\n14. Papaya\n15. Quince"}
+{"key": ["prefill", "fruits", "qwen2.5:3b", 0.65], "text": "11. Lime\n12. Mango\n13. Nutmeg\n14. Orange\n15. Papaya"}
+{"key": ["instruct", "fruits", "qwen2.5:3b", 0.65], "text": "11. Mango\n12. Nutmeg\n13. Papaya\n14. Quince\n15. Raspberry"}
+{"key": ["restart", "instruments", "qwen2.5:3b"], "text": "1. <numberine. Flute\n2. <numbertwo. Drum\n3. <ninetwo. Xylophone\n4. <twotwo. Trumpet\n5. <fivethree. Clarinet\n6. <sixthree. Cello\n7. <seventhree. Piano\n8. <eighthree. Violin\n9. <ninefour. Saxophone\n10. <tenfour. Guitar\n11. <elevenfive. Harp\n12. <twelvefive. Tambourine"}
+{"key": ["prefill", "instruments", "qwen2.5:3b", 0.3], "text": "5. <fivethree. Clarinet\n6. <sixthree. Cello\n7. <seventhree. Piano\n8. <eighthree. Violin\n9. <ninefour. Saxophone\n10. <tenfour. Guitar\n11. <elevenfive. Harp\n12. <twelvefive. Tambourine"}
+{"key": ["instruct", "instruments", "qwen2.5:3b", 0.3], "text": "5. <threetwo. Clarinet\n6. <fourtwo. Cello\n7. <five. Piano\n8. <sizetwo. Violin\n9. <twotwo. Saxophone\n10. <fivethree. Guitar\n11. <sixthree. Harp\n12. <seventhree. Banjo"}
+{"key": ["prefill", "instruments", "qwen2.5:3b", 0.65], "text": "9. <ninefour. Saxophone\n10. <tenfour. Guitar\n11. <elevenfive. Harp\n12. <twelvefive. Tambourine"}
+{"key": ["instruct", "instruments", "qwen2.5:3b", 0.65], "text": "9. <ninefour. Saxophone\n10. <tenfour. Guitar\n11. <elevenfour. Harp\n12. <twelvethree. Oboe"}
+{"key": ["restart", "tea", "qwen2.5:3b"], "text": "1. Boil water on stove\n2. Measure desired amount of tea leaves or loose tea\n3. Prepare teacup and saucer if using\n4. Pour boiling water into teacup\n5. Let the water cool to brewing temperature\n6. Add measured tea to hot water in cup\n7. Steep for desired time (usually 2-5 minutes)\n8. Remove tea leaves or strain loose tea from cup\n9. Add sweetener and milk if preferred\n10. Stir gently before serving"}
+{"key": ["prefill", "tea", "qwen2.5:3b", 0.3], "text": "8-ounce cup of boiling water over tea leaves or loose tea\n5. Let steep for 3-5 minutes, depending on preference\n6. Remove tea leaves or strain out loose tea\n7. Add sweetener and milk to taste\n8. Stir gently with a spoon\n9. Serve immediately\n10. Enjoy your cup of tea"}
+{"key": ["instruct", "tea", "qwen2.5:3b", 0.3], "text": "4. Pour boiling water into teacup\n5. Steep tea for desired time\n6. Remove from heat when steeping is complete\n7. Add sweetener and milk if preferred\n8. Stir gently to combine ingredients\n9. Enjoy your cup of tea\n10. Dispose of used materials properly"}
+{"key": ["prefill", "tea", "qwen2.5:3b", 0.65], "text": "2-5 minutes)\n8. Remove tea leaves or strain loose tea from cup\n9. Add sweetener and milk if preferred\n10. Stir gently before serving"}
+{"key": ["instruct", "tea", "qwen2.5:3b", 0.65], "text": "3-5 minutes)\n8. Remove tea from hot water if using loose leaves or strain if using tea bags\n9. Add sweetener and milk to taste (optional)\n10. Serve immediately and enjoy"}
+{"key": ["restart", "count40", "llama3.2:1b"], "text": "1. 1. one\n2. 2. two\n3. 3. three\n4. 4. four\n5. 5. five\n6. 6. six\n7. 7. seven\n8. 8. eight\n9. 9. nine\n10. 10. ten\n11. 11. eleven\n12. 12. twelve\n13. 13. thirteen\n14. 14. fourteen\n15. 15. fifteen\n16. 16. sixteen\n17. 17. seventeen\n18. 18. eighteen\n19. 19. nineteen\n20. 20. twenty\n21. 21. twenty-one\n22. 22. twenty-two\n23. 23. twenty-three\n24. 24. twenty-four\n25. 25. twenty-five\n26. 26. twenty-six\n27. 27. twenty-seven\n28. 28. twenty-eight\n29. 29. twenty-nine\n30. 30. thirty\n31. 31. thirty-one\n32. 32. thirty-two\n33. 33. thirty-three\n34. 34. thirty-four\n35. 35. thirty-five\n36. 36. thirty-six\n37. 37. thirty-seven\n38. 38. thirty-eight\n39. 39. thirty-nine\n40. 40. forty"}
+{"key": ["prefill", "count40", "llama3.2:1b", 0.3], "text": "14.\n15. 15.\n16. 16.\n17. 17.\n18. 18.\n19. 19.\n20. 20.\n21. 21.\n22. 22.\n23. 23.\n24. 24.\n25. 25.\n26. 26.\n27. 27.\n28. 28.\n29. 29.\n30. 30.\n31. 31.\n32. 32.\n33. 33.\n34. 34.\n35. 35.\n36. 36.\n37. 37.\n38. 38.\n39. 39.\n40. 40"}
+{"key": ["instruct", "count40", "llama3.2:1b", 0.3], "text": "15. 14.\n16. 15.\n17. 16.\n18. 17.\n19. 18.\n20. 19.\n21. 20.\n22. 21.\n23. 22.\n24. 23.\n25. 24.\n26. 25.\n27. 26.\n28. 27.\n29. 28.\n30. 29.\n31. 30.\n32. 31.\n33. 32.\n34. 33.\n35. 34.\n36. 35.\n37. 36.\n38. 37.\n39. 38.\n40. 39."}
+{"key": ["prefill", "count40", "llama3.2:1b", 0.65], "text": "28. 28.\n29. 29.\n30. 30.\n31. 31.\n32. 32.\n33. 33.\n34. 34.\n35. 35.\n36. 36.\n37. 37.\n38. 38.\n39. 39.\n40. 40"}
+{"key": ["instruct", "count40", "llama3.2:1b", 0.65], "text": "28. 28.\n29. 29.\n30. 30.\n31. 31.\n32. 32.\n33. 33.\n34. 34.\n35. 35.\n36. 36.\n37. 37.\n38. 38.\n39. 39.\n40. 40"}
+{"key": ["restart", "animals", "llama3.2:1b"], "text": "1. Lion\n2. Octopus\n3. Koala\n4. Cheetah\n5. Penguin\n6. Dolphin\n7. Tiger\n8. Flamingo\n9. Bear\n10. Monkey\n11. Snake\n12. Elephant\n13. Kangaroo\n14. Giraffe\n15. Wolf"}
+{"key": ["prefill", "animals", "llama3.2:1b", 0.3], "text": " Horse\n7. Koala\n8. Penguin\n9. Raccoon\n10. Snake\n11. Tiger\n12. Wolf\n13. Bear\n14. Monkey\n15. Crocodile"}
+{"key": ["instruct", "animals", "llama3.2:1b", 0.3], "text": "7. Kangaroo\n8. Penguin\n9. Tiger\n10. Koala\n11. Chimpanzee\n12. Wolf\n13. Octopus\n14. Rhinoceros\n15. Lemur"}
+{"key": ["prefill", "animals", "llama3.2:1b", 0.65], "text": "11. Lemur\n12. Lion\n13. Monkey\n14. Narwhal\n15. Penguin"}
+{"key": ["instruct", "animals", "llama3.2:1b", 0.65], "text": "11. Lemur\n12. Narwhal\n13. Ostrich\n14. Penguin\n15. Quail"}
+{"key": ["restart", "months", "llama3.2:1b"], "text": "1 January\n2 February\n3 March\n4 April\n5 May\n6 June\n7 July\n8 August\n9 September\n10 October\n11 November\n12 December"}
+{"key": ["prefill", "months", "llama3.2:1b", 0.3], "text": "5. May\n6. June\n7. July\n8. August\n9. September\n10. October\n11. November\n12. December"}
+{"key": ["instruct", "months", "llama3.2:1b", 0.3], "text": "5. May\n6. June\n7. July\n8. August\n9. September\n10. October\n11. November\n12. December"}
+{"key": ["prefill", "months", "llama3.2:1b", 0.65], "text": "10. October\n11. November\n12. December"}
+{"key": ["instruct", "months", "llama3.2:1b", 0.65], "text": "10. October\n11. November\n12. December"}
+{"key": ["restart", "days", "llama3.2:1b"], "text": "1. Monday\n2. Tuesday\n3. Wednesday\n4. Thursday\n5. Friday\n6. Saturday\n7. Sunday"}
+{"key": ["prefill", "days", "llama3.2:1b", 0.3], "text": " Wednesday.\n4. Thursday.\n5. Friday.\n6. Saturday.\n7. Sunday."}
+{"key": ["instruct", "days", "llama3.2:1b", 0.3], "text": "4. Wednesday.\n5. Thursday.\n6. Friday.\n7. Saturday."}
+{"key": ["prefill", "days", "llama3.2:1b", 0.65], "text": "6. Saturday.\n7. Sunday."}
+{"key": ["instruct", "days", "llama3.2:1b", 0.65], "text": "6. Saturday.\n7. Sunday."}
+{"key": ["restart", "bwords", "llama3.2:1b"], "text": "1. Brilliant\n2. Bubble\n3. Butterfly\n4. Banana\n5. Basketball\n6. Beautiful\n7. Bread\n8. Bookshelf\n9. Birthday\n10. Bicycle\n11. Blissful\n12. Boundless\n13. Bubbly\n14. Brisk\n15. Briefcase\n16. Brilliantly\n17. Benevolent\n18. Blushing\n19. Boldly\n20. Boundaries"}
+{"key": ["prefill", "bwords", "llama3.2:1b", 0.3], "text": " Brain\n8. Brick\n9. Birthday\n10. Blissful\n11. Breeze\n12. Breakfast\n13. Butterfly\n14. Ballerina\n15. Bicycle\n16. Beautiful\n17. Boundless\n18. Bookshelf\n19. Brilliant\n20. Bliss"}
+{"key": ["instruct", "bwords", "llama3.2:1b", 0.3], "text": "8. Basket\n9. Birthday\n10. Butterfly\n11. Bicycle\n12. Breakfast\n13. Bedroom\n14. Basketball\n15. Beautiful\n16. Biscuit\n17. Boundaries\n18. Bookshelf\n19. Bubblegum\n20. Botanical"}
+{"key": ["prefill", "bwords", "llama3.2:1b", 0.65], "text": " Brain\n16. Brick\n17. Butter\n18. Bicycle\n19. Basket\n20. Birthday"}
+{"key": ["instruct", "bwords", "llama3.2:1b", 0.65], "text": "16. Basket\n17. Bicycle\n18. Birthday\n19. Breakfast\n20. Butterfly"}
+{"key": ["restart", "europe", "llama3.2:1b"], "text": "1. France\n2. Germany\n3. Italy\n4. Spain\n5. Portugal\n6. Sweden\n7. Denmark\n8. Netherlands\n9. Belgium\n10. Greece"}
+{"key": ["prefill", "europe", "llama3.2:1b", 0.3], "text": "4. Italy\n5. Spain\n6. Portugal\n7. Netherlands\n8. Belgium\n9. Greece\n10. Poland"}
+{"key": ["instruct", "europe", "llama3.2:1b", 0.3], "text": "4. Italy\n5. Spain\n6. Portugal\n7. Sweden\n8. Denmark\n9. Netherlands\n10. Austria"}
+{"key": ["prefill", "europe", "llama3.2:1b", 0.65], "text": " Netherlands\n8. Sweden\n9. Portugal\n10. Greece"}
+{"key": ["instruct", "europe", "llama3.2:1b", 0.65], "text": "8. Portugal\n9. Romania\n10. Sweden"}
+{"key": ["restart", "primes", "llama3.2:1b"], "text": "2. 3\n5. 7\n11. 13\n17. 19\n23. 29\n37. 41\n53. 59\n71. 73\n83. 89\n97. 101\n107. 109\n113. 127"}
+{"key": ["prefill", "primes", "llama3.2:1b", 0.3], "text": "6. 13.\n7. 17.\n8. 19.\n9. 23.\n10. 29.\n11. 31.\n12. 37.\n13. 41.\n14. 43.\n15. 47."}
+{"key": ["instruct", "primes", "llama3.2:1b", 0.3], "text": "13.\n17.\n19.\n23.\n29.\n31.\n37.\n41.\n43.\n47.\n53.\n59."}
+{"key": ["prefill", "primes", "llama3.2:1b", 0.65], "text": "31.\n12. 37.\n13. 41.\n14. 43.\n15. 47."}
+{"key": ["instruct", "primes", "llama3.2:1b", 0.65], "text": "31. 37.\n32. 41.\n33. 43.\n34. 47.\n35. 53.\n36. 59.\n37. 61.\n38. 67.\n39. 71.\n40. 73.\n41. 79.\n42. 83.\n43. 89.\n44. 97."}
+{"key": ["restart", "sleep", "llama3.2:1b"], "text": "1. Establish a consistent sleep schedule.\n2. Create a relaxing bedtime routine.\n3. Make your bedroom dark and quiet.\n4. Invest in a comfortable mattress.\n5. Avoid screens before bed.\n6. Limit caffeine intake before bedtime.\n7. Try progressive muscle relaxation techniques.\n8. Use calming essential oils.\n9. Get regular exercise, but not before bed.\n10. Avoid heavy meals close to bedtime.\n11. Consider keeping a sleep diary.\n12. Create a sleep-conducive environment."}
+{"key": ["prefill", "sleep", "llama3.2:1b", 0.3], "text": "3-4 hours of caffeine consumption.\n6. Exercise regularly but not before bed.\n7. Try progressive muscle relaxation techniques.\n8. Use calming essential oils in the bedroom.\n9. Write down your thoughts to clear your mind.\n10. Get some morning sunlight exposure.\n11. Limit naps during the day if needed.\n12. Consider keeping a sleep diary for tracking patterns."}
+{"key": ["instruct", "sleep", "llama3.2:1b", 0.3], "text": "6. Write in a journal to clear your mind.\n7. Exercise regularly, but not before bed.\n8. Try progressive muscle relaxation techniques.\n9. Limit caffeine and nicotine intake.\n10. Avoid stimulating activities before bedtime.\n11. Consider using earplugs or white noise machines.\n12. Get some morning sunlight exposure."}
+{"key": ["prefill", "sleep", "llama3.2:1b", 0.65], "text": "10-minute wake-up call.\n10. Limit caffeine and nicotine intake.\n11. Get some morning sunlight exposure.\n12. Avoid napping during the day if possible."}
+{"key": ["instruct", "sleep", "llama3.2:1b", 0.65], "text": "10. Limit caffeine and nicotine intake.\n11. Avoid stimulating activities before bedtime.\n12. Get some morning sunlight to regulate circadian rhythms."}
+{"key": ["restart", "alphabet", "llama3.2:1b"], "text": "1. A\n2. B\n3. C\n4. D\n5. E\n6. F\n7. G\n8. H\n9. I\n10. J\n11. K\n12. L\n13. M\n14. N\n15. O\n16. P\n17. Q\n18. R\n19. S\n20. T\n21. U\n22. V\n23. W\n24. X\n25. Y\n26. Z"}
+{"key": ["prefill", "alphabet", "llama3.2:1b", 0.3], "text": " I\n10. J\n11. K\n12. L\n13. M\n14. N\n15. O\n16. P\n17. Q\n18. R\n19. S\n20. T\n21. U\n22. V\n23. W\n24. X\n25. Y\n26. Z"}
+{"key": ["instruct", "alphabet", "llama3.2:1b", 0.3], "text": "10. I\n11. J\n12. K\n13. L\n14. M\n15. N\n16. O\n17. P\n18. Q\n19. R\n20. S\n21. T\n22. U\n23. V\n24. W\n25. X\n26. Y"}
+{"key": ["prefill", "alphabet", "llama3.2:1b", 0.65], "text": " R\n19. S\n20. T\n21. U\n22. V\n23. W\n24. X\n25. Y\n26. Z"}
+{"key": ["instruct", "alphabet", "llama3.2:1b", 0.65], "text": "19. R\n20. S\n21. T\n22. U\n23. V\n24. W\n25. X\n26. Y"}
+{"key": ["restart", "langs", "llama3.2:1b"], "text": "1. Python\n2. Java\n3. JavaScript\n4. C++\n5. Ruby\n6. Swift\n7. PHP\n8. Go\n9. R\n10. Kotlin\n11. TypeScript\n12. Scala\n13. Haskell\n14. Lua\n15. Perl"}
+{"key": ["prefill", "langs", "llama3.2:1b", 0.3], "text": "6. Ruby\n7. Swift\n8. PHP\n9. Go\n10. R\n11. Haskell\n12. Kotlin\n13. TypeScript\n14. Lua\n15. Perl"}
+{"key": ["instruct", "langs", "llama3.2:1b", 0.3], "text": "6. Ruby\n7. Swift\n8. PHP\n9. Go\n10. Rust\n11. Kotlin\n12. TypeScript\n13. Scala\n14. Lua\n15. Haskell"}
+{"key": ["prefill", "langs", "llama3.2:1b", 0.65], "text": " Haskell\n12. R\n13. Lua\n14. Perl\n15. Kotlin"}
+{"key": ["instruct", "langs", "llama3.2:1b", 0.65], "text": "12. Kotlin\n13. TypeScript\n14. Haskell\n15. Lua"}
+{"key": ["restart", "colors", "llama3.2:1b"], "text": "1. Red\n2. Blue\n3. Yellow\n4. Green\n5. Purple\n6. Orange\n7. Pink\n8. Brown\n9. Grey\n10. Turquoise"}
+{"key": ["prefill", "colors", "llama3.2:1b", 0.3], "text": " yellow\n5. purple\n6. orange\n7. pink\n8. brown\n9. black\n10. turquoise"}
+{"key": ["instruct", "colors", "llama3.2:1b", 0.3], "text": "5. purple\n6. yellow\n7. orange\n8. pink\n9. brown\n10. turquoise"}
+{"key": ["prefill", "colors", "llama3.2:1b", 0.65], "text": " brown\n8. pink\n9. black\n10. turquoise"}
+{"key": ["instruct", "colors", "llama3.2:1b", 0.65], "text": "8. pink\n9. brown\n10. turquoise"}
+{"key": ["restart", "planets", "llama3.2:1b"], "text": "1. Mercury\n2. Venus\n3. Earth\n4. Mars\n5. Jupiter\n6. Saturn\n7. Uranus\n8. Neptune"}
+{"key": ["prefill", "planets", "llama3.2:1b", 0.3], "text": " Earth\n4. Mars\n5. Jupiter\n6. Saturn\n7. Uranus\n8. Neptune"}
+{"key": ["instruct", "planets", "llama3.2:1b", 0.3], "text": "4. Earth\n5. Mars\n6. Jupiter\n7. Saturn\n8. Uranus\n9. Neptune"}
+{"key": ["prefill", "planets", "llama3.2:1b", 0.65], "text": " Saturn\n7. Uranus\n8. Neptune"}
+{"key": ["instruct", "planets", "llama3.2:1b", 0.65], "text": "7. Saturn\n8. Uranus\n9. Neptune\n10. Pluto"}
+{"key": ["restart", "fruits", "llama3.2:1b"], "text": "1. Apple\n2. Banana\n3. Mango\n4. Strawberry\n5. Watermelon\n6. Pineapple\n7. Cherry\n8. Blueberry\n9. Raspberry\n10. Peach\n11. Kiwi\n12. Grapes\n13. Pomegranate\n14. Apricot\n15. Lemon"}
+{"key": ["prefill", "fruits", "llama3.2:1b", 0.3], "text": "6. Fig\n7. Grape\n8. Guava\n9. Kiwi\n10. Lemon\n11. Mango\n12. Orange\n13. Papaya\n14. Pear\n15. Strawberry"}
+{"key": ["instruct", "fruits", "llama3.2:1b", 0.3], "text": "6. Fig\n7. Grape\n8. Guava\n9. Kiwi\n10. Lemon\n11. Mango\n12. Orange\n13. Papaya\n14. Pear\n15. Pomegranate"}
+{"key": ["prefill", "fruits", "llama3.2:1b", 0.65], "text": "11. Mango\n12. Orange\n13. Papaya\n14. Pear\n15. Strawberry"}
+{"key": ["instruct", "fruits", "llama3.2:1b", 0.65], "text": "11. Mango\n12. Orange\n13. Papaya\n14. Pear\n15. Pomegranate"}
+{"key": ["restart", "instruments", "llama3.2:1b"], "text": "1. Piano\n2. Guitar\n3. Drums\n4. Violin\n5. Trumpet\n6. Cello\n7. Harp\n8. Saxophone\n9. Flute\n10. Banjo\n11. Ukulele\n12. Harmonica"}
+{"key": ["prefill", "instruments", "llama3.2:1b", 0.3], "text": "5. <threetwo. Piano\n6. <foursix. Violin\n7. <fivesix. Guitar\n8. <sixseven. Cello\n9. <seventeeneight. Harp\n10. <nineteenten. Saxophone\n11. <twentyonetwelve>. Banjo"}
+{"key": ["instruct", "instruments", "llama3.2:1b", 0.3], "text": "5. <threenine. Harp\n6. <fivetwo. Piano\n7. <sextone. Violin\n8. <seventeen. Cello\n9. <eighteen. Double Bass"}
+{"key": ["prefill", "instruments", "llama3.2:1b", 0.65], "text": "9. <ninthfour. Guitar\n10. <tenthfive. Bass\n11. <eleventh-six. Harp\n12. <twelvethseven. Saxophone"}
+{"key": ["instruct", "instruments", "llama3.2:1b", 0.65], "text": "9. <ninetwosix. Guitar\n10. <twotwofour. Harp\n11. <fivethreefive. Bass\n12. <sixthreeseven. Double Bass"}
+{"key": ["restart", "tea", "llama3.2:1b"], "text": "1. Boil fresh water in a kettle.\n2. Measure out one teaspoon of loose-leaf tea or one tea bag for every six ounces of water.\n3. Place the tea leaves or tea bag into a teapot.\n4. Pour boiling water over the tea leaves or tea bag.\n5. Allow the tea to steep for three to five minutes, depending on desired strength.\n6. Strain the tea into a cup using a tea strainer or fine-mesh sieve.\n7. Discard the tea leaves or tea bag and add milk and sugar to taste if desired.\n8. Stir the tea gently to combine the ingredients.\n9. Add any additional flavorings such as honey, lemon, or fruit slices to taste.\n10. Serve the tea hot and enjoy."}
+{"key": ["prefill", "tea", "llama3.2:1b", 0.3], "text": "160-180 ml of boiling water over the tea leaves\n5. Allow tea to steep for 1-3 minutes depending on desired strength\n6. Strain tea into cup using a strainer or tea infuser\n7. Add milk and sugar to taste as desired\n8. Stir tea gently to combine ingredients\n9. Serve immediately in prepared teacup\n10. Enjoy your freshly brewed cup of tea"}
+{"key": ["instruct", "tea", "llama3.2:1b", 0.3], "text": "5. Add hot water to teapot\n6. Stir in sugar or sweetener of choice\n7. Let tea steep for desired amount of time\n8. Strain tea leaves from pot if using loose tea\n9. Pour tea into prepared cup and saucer\n10. Add milk and/or creamer to taste"}
+{"key": ["prefill", "tea", "llama3.2:1b", 0.65], "text": "1-3 minutes)\n8. Strain loose tea leaves from liquid\n9. Discard loose tea and add sweetener or milk if desired\n10. Serve and enjoy"}
+{"key": ["instruct", "tea", "llama3.2:1b", 0.65], "text": "8. Strain tea leaves from cup if using loose tea\n9. Add sugar or sweetener to taste\n10. Stir in milk and/or other desired additives"}

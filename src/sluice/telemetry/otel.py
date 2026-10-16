@@ -95,6 +95,8 @@ class Metrics:
             "sluice.cache.lookups", "{lookup}", "Semantic cache lookups by result and skip reason")
         self.escalations = meter.create_counter(
             "sluice.escalations", "{escalation}", "Answers re-asked on the stronger route, by check")
+        self.stream_resumes = meter.create_counter(
+            "sluice.stream_resumes", "{resume}", "Streams continued on another provider")
         self.fallbacks = meter.create_counter(
             "sluice.fallbacks", "{fallback}", "Times a target was abandoned for the next one")
 

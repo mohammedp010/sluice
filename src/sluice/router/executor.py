@@ -125,13 +125,18 @@ class Executor:
             "sluice.provider": fb.provider, sc.ERROR_TYPE: fb.reason,
             "sluice.next_provider": nxt or "none"})
 
-    async def _run(self, route: Route, params: ChatParams, call):
-        """Generic chain walker. `call(provider, params, timeout)` returns the result or raises."""
+    async def _run(self, route: Route, params: ChatParams, call,
+                   skip: frozenset[str] = frozenset()):
+        """Generic chain walker. `call(provider, params, timeout)` returns the result or raises.
+        Providers in `skip` are passed over (a stream resume never goes back to the one that
+        just died)."""
         trail = Trail()
         deadline = time.monotonic() + route.deadline_s
         last: ProviderError | None = None
 
         for i, target in enumerate(route.chain):
+            if target.provider in skip:
+                continue
             breaker = self.breakers[target.provider]
             tparams = ChatParams(**{**params.__dict__, "model": target.upstream_model})
             for n in range(target.retries + 1):
@@ -216,7 +221,7 @@ class Executor:
         return await self._run(route, params, call)
 
     async def stream(
-        self, route: Route, params: ChatParams
+        self, route: Route, params: ChatParams, skip: frozenset[str] = frozenset(),
     ) -> tuple[tuple[Chunk | None, AsyncIterator[Chunk]], Trail]:
         """Fail over until the FIRST chunk arrives (ADR 0001). After that the caller owns the
         stream: a mid-stream error is surfaced, not retried. So a stream's attempt span covers
@@ -235,4 +240,4 @@ class Executor:
                 raise
             return first, it
 
-        return await self._run(route, params, call)
+        return await self._run(route, params, call, skip)

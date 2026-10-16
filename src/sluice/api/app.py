@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import functools
 import json
 import os
 import time
@@ -41,6 +42,7 @@ from ..providers.base import (
 )
 from ..quality.signals import heuristic_flags
 from ..router.executor import AllProvidersFailed, Executor, NonRetryableError, Trail
+from ..router.resume import ResumableStream
 from ..telemetry import semconv as sc
 from ..telemetry.ledger import UsageLedger
 from ..telemetry.otel import Metrics, Telemetry, build_telemetry
@@ -354,7 +356,8 @@ def create_app(
             # status line is sent and failure can only be signalled in-stream (ADR 0001). For
             # the same reason a streamed answer can't be checked and escalated: on an escalating
             # route, streams go straight to the stronger route.
-            (first, upstream), trail = await ex.stream(route.escalate or route, params)
+            sroute = route.escalate or route
+            (first, upstream), trail = await ex.stream(sroute, params)
             log.trail = trail
         except NonRetryableError as e:
             log.trail = e.trail
@@ -366,22 +369,36 @@ def create_app(
             await settle([])
             return _upstream_error(e)
 
+        def resumed(provider: str, chars: int, nxt: str) -> None:
+            log.span.add_event("sluice.stream_resume", {
+                "sluice.provider": provider, "sluice.next_provider": nxt,
+                "sluice.resume.prefix_chars": chars, "sluice.resume.strategy": route.stream_resume})
+            metrics.stream_resumes.add(1, {"sluice.provider": provider})
+
+        rs = ResumableStream(ex, sroute, params, route.stream_resume, resumed)
+
         async def on_done(r: StreamResult) -> None:
             try:
-                if r.outcome == "stream_interrupted":
-                    ex.report_stream_failure(trail.provider)
+                for s in rs.segments:
+                    if s.cut:
+                        ex.report_stream_failure(s.trail.provider)
                 # no usage reported (error / disconnect): bill what we saw
-                usage = r.usage or Usage(prompt_est, len(r.text) // 4)
-                await settle([(trail.target, usage)])
+                await settle(rs.bills(lambda s: Usage(prompt_est, len(s.text) // 4)))
                 if r.outcome == "ok":  # only complete answers are worth replaying
-                    remember(r.text, r.finish_reason, usage)
+                    remember(r.text, r.finish_reason, log.usage or Usage())
             finally:
+                if len(rs.segments) > 1:
+                    log.trail = functools.reduce(_merge, [s.trail for s in rs.segments])
+                    log.span.set_attribute("sluice.resume.trimmed_chars", rs.trimmed)
+                    if r.outcome == "ok":
+                        r.outcome = "resumed"
                 log.outcome = r.outcome
                 log.finish_reason = r.finish_reason
                 finish(log)
 
-        return _stream_response(_sse(cid, created, req.model, first, upstream, on_done),
-                                _trail_headers(trail))
+        return _stream_response(
+            _sse(cid, created, req.model, None, rs.chunks(first, upstream, trail), on_done),
+            _trail_headers(trail))
 
     def finish(log: RequestLog) -> None:
         """Close the request span and emit metrics + the ledger row. Exactly once."""

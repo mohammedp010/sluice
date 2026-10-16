@@ -57,6 +57,9 @@ class Route(BaseModel):
     # Quality routing: if a non-streamed answer fails one of `escalate_on`, ask this (stronger)
     # route instead and bill both. Streams go straight to it: a sent answer can't be recalled.
     escalate: Route | None = None
+    # Streams that die after their first chunk: "off" ends with an error event (ADR 0001);
+    # "prefill" / "instruct" continue once on the next provider from the text already sent.
+    stream_resume: Literal["off", "prefill", "instruct"] = "off"
     escalate_on: list[Check] = Field(
         default_factory=lambda: ["empty", "truncated", "refusal", "invalid_json", "repetition"])
 
