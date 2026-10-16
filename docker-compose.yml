@@ -1,0 +1,17 @@
+# Two gateway replicas sharing one Redis: limits must hold across both.
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+  gateway-1: &gw
+    build: .
+    environment:
+      SLUICE_POLICY: /app/policies/compose.yaml
+    volumes:
+      - ./policies:/app/policies:ro
+      - ./data:/data               # shared sqlite key store
+    depends_on: [redis]
+    ports: ["8001:8000"]
+  gateway-2:
+    <<: *gw
+    ports: ["8002:8000"]

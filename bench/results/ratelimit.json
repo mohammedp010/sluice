@@ -1,0 +1,23 @@
+{
+  "alpha": {
+    "rpm_limit": 30,
+    "sent": 100,
+    "200": 30,
+    "429": 70,
+    "exact": true
+  },
+  "beta": {
+    "rpm_limit": 60,
+    "sent": 100,
+    "200": 60,
+    "429": 40,
+    "exact": true
+  },
+  "gamma": {
+    "rpm_limit": 10,
+    "sent": 100,
+    "200": 10,
+    "429": 90,
+    "exact": true
+  }
+}

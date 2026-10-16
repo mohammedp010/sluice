@@ -1,0 +1,32 @@
+# Public model name (what clients send) -> fallback chain of providers.
+auth:
+  enabled: true
+  db_path: /data/sluice.db
+state:
+  backend: redis
+  redis_url: redis://redis:6379/0
+limits:
+  default_completion_estimate: 256
+  paid_daily_call_cap: 50
+
+providers:
+  mock:
+    type: mock
+    tokens_per_sec: 50
+  ollama:
+    type: openai_compat
+    base_url: http://host.docker.internal:11434/v1
+    timeout_s: 120
+
+routes:
+  mock-model:
+    provider: mock
+    upstream_model: mock-1
+    # fake prices so budgets can be exercised for free (USD per million tokens)
+    price_in_per_mtok: 1000
+    price_out_per_mtok: 2000
+  local-small:
+    deadline_s: 120
+    chain:
+      - {provider: ollama, upstream_model: "llama3.2:1b", timeout_s: 60, retries: 1}
+      - {provider: mock, upstream_model: mock-1, retries: 0}   # degraded last resort
