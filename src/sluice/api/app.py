@@ -21,6 +21,7 @@ from ..auth.keys import KeyStore, VirtualKey
 from ..cache.semantic import CachedAnswer, Probe, SemanticCache
 from ..config import (
     Settings,
+    Target,
     build_breakers,
     build_cache,
     build_providers,
@@ -29,7 +30,16 @@ from ..config import (
 )
 from ..limits.estimate import cost_micro_usd, estimate_prompt_tokens
 from ..limits.state import SharedState
-from ..providers.base import ChatParams, Chunk, Message, Provider, ProviderError, Usage
+from ..providers.base import (
+    ChatParams,
+    Chunk,
+    Completion,
+    Message,
+    Provider,
+    ProviderError,
+    Usage,
+)
+from ..quality.signals import heuristic_flags
 from ..router.executor import AllProvidersFailed, Executor, NonRetryableError, Trail
 from ..telemetry import semconv as sc
 from ..telemetry.ledger import UsageLedger
@@ -236,7 +246,8 @@ def create_app(
                 return _rate_limited("tokens", retry)
 
         params = ChatParams(model="", messages=messages, temperature=req.temperature,
-                            max_tokens=max_tokens or settings.limits.default_max_tokens)
+                            max_tokens=max_tokens or settings.limits.default_max_tokens,
+                            response_format=req.response_format)
         cid = f"chatcmpl-{uuid.uuid4().hex[:24]}"
         created = int(time.time())
 
@@ -282,41 +293,72 @@ def create_app(
 
         # --- 5. do the work ----------------------------------------------------------------
 
-        async def settle(trail: Trail | None, usage: Usage | None) -> None:
-            """Reconcile the estimate with reality: fix the TPM bucket and record spend."""
-            actual = usage.total_tokens if usage else 0
-            await sh.adjust(tpm_bucket, key.tpm, est - actual)
-            if usage and trail and trail.target:
-                t = trail.target
-                micro = cost_micro_usd(usage.prompt_tokens, usage.completion_tokens,
-                                       t.price_in_per_mtok, t.price_out_per_mtok)
-                log.usage, log.cost_micro = usage, micro
+        async def settle(bills: list[tuple[Target, Usage]]) -> None:
+            """Reconcile the estimate with reality: fix the TPM bucket and record spend. One bill
+            per upstream answer: none if all failed, two if an answer was escalated."""
+            used = Usage(sum(u.prompt_tokens for _, u in bills),
+                         sum(u.completion_tokens for _, u in bills))
+            await sh.adjust(tpm_bucket, key.tpm, est - used.total_tokens)
+            if bills:
+                micro = sum(cost_micro_usd(u.prompt_tokens, u.completion_tokens,
+                                           t.price_in_per_mtok, t.price_out_per_mtok)
+                            for t, u in bills)
+                log.usage, log.cost_micro = used, micro
                 if micro:
                     await sh.add_spend(key.id, micro)
+
+        def billed(c: Completion) -> Usage:
+            # upstream reported no usage: bill an estimate, not 0
+            return c.usage if c.usage.total_tokens else Usage(prompt_est, len(c.content) // 4)
+
+        async def escalate(c: Completion, trail: Trail, flags: list[str],
+                           bills: list) -> tuple[Completion, Trail, bool]:
+            """Re-ask on the stronger route. If that fails too, the cheap answer still stands."""
+            log.span.add_event("sluice.escalate", {"sluice.checks": flags,
+                                                   "sluice.provider": trail.provider or ""})
+            for f in flags:
+                metrics.escalations.add(1, {"sluice.check": f})
+            try:
+                c2, t2 = await ex.complete(route.escalate, params)
+            except (AllProvidersFailed, NonRetryableError) as e:
+                log.span.add_event("sluice.escalate_failed", {sc.ERROR_TYPE: type(e).__name__})
+                return c, _merge(trail, e.trail), False
+            bills.append((t2.target, billed(c2)))
+            return c2, _merge(trail, t2), True
 
         try:
             if not req.stream:
                 c, trail = await ex.complete(route, params)
+                bills = [(trail.target, billed(c))]
+                flags = [f for f in heuristic_flags(c.content, c.finish_reason, req.expects_json)
+                         if f in route.escalate_on] if route.escalate else []
+                escalated = False
+                if flags:
+                    c, trail, escalated = await escalate(c, trail, flags, bills)
                 log.trail, log.finish_reason = trail, c.finish_reason
-                usage = c.usage
-                if not usage.total_tokens:  # upstream reported no usage: bill an estimate, not 0
-                    usage = Usage(prompt_est, len(c.content) // 4)
-                await settle(trail, usage)
-                remember(c.content, c.finish_reason, usage)
-                return _completion(cid, created, req.model, c.content, c.finish_reason, usage,
-                                   _trail_headers(trail))
+                await settle(bills)
+                headers = _trail_headers(trail)
+                if flags:
+                    headers["x-sluice-escalated"] = ",".join(flags) + ("" if escalated
+                                                                       else ";failed")
+                if escalated or not flags:  # never cache an answer that failed a check
+                    remember(c.content, c.finish_reason, bills[-1][1])
+                return _completion(cid, created, req.model, c.content, c.finish_reason,
+                                   bills[-1][1], headers)
             # Streaming: the executor fails over until the first chunk arrives. After that the
-            # status line is sent and failure can only be signalled in-stream (ADR 0001).
-            (first, upstream), trail = await ex.stream(route, params)
+            # status line is sent and failure can only be signalled in-stream (ADR 0001). For
+            # the same reason a streamed answer can't be checked and escalated: on an escalating
+            # route, streams go straight to the stronger route.
+            (first, upstream), trail = await ex.stream(route.escalate or route, params)
             log.trail = trail
         except NonRetryableError as e:
             log.trail = e.trail
-            await settle(None, None)  # nothing was produced: refund the whole estimate
+            await settle([])  # nothing was produced: refund the whole estimate
             return _error(e.error.status or 502, str(e.error), "upstream_rejected",
                           _trail_headers(e.trail))
         except AllProvidersFailed as e:
             log.trail = e.trail
-            await settle(None, None)
+            await settle([])
             return _upstream_error(e)
 
         async def on_done(r: StreamResult) -> None:
@@ -325,7 +367,7 @@ def create_app(
                     ex.report_stream_failure(trail.provider)
                 # no usage reported (error / disconnect): bill what we saw
                 usage = r.usage or Usage(prompt_est, len(r.text) // 4)
-                await settle(trail, usage)
+                await settle([(trail.target, usage)])
                 if r.outcome == "ok":  # only complete answers are worth replaying
                     remember(r.text, r.finish_reason, usage)
             finally:
@@ -497,6 +539,12 @@ async def _chain(head: list[Chunk], tail: AsyncIterator[Chunk]) -> AsyncIterator
         yield h
     async for t in tail:
         yield t
+
+
+def _merge(first: Trail, second: Trail) -> Trail:
+    """One trail for an escalated request: both chains' attempts, the answer's provider."""
+    return Trail(first.attempts + second.attempts, first.fallbacks + second.fallbacks,
+                 second.provider or first.provider, second.target or first.target)
 
 
 def _trail_headers(trail: Trail) -> dict[str, str]:

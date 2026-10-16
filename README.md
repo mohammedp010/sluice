@@ -5,7 +5,8 @@ Free to run: mock + local Ollama by default; paid providers are blocked unless o
 
 **Done so far:** Phase 1 (gateway + streaming) · Phase 2 (fallback, retries, circuit breaker, chaos tests) ·
 Phase 3 (virtual keys, RPM/TPM limits, budgets, kill switch) · Phase 4 (OpenTelemetry traces + metrics,
-per-team cost ledger) · Phase 5 (semantic cache with a lexical guard; threshold from a labelled eval).
+per-team cost ledger) · Phase 5 (semantic cache with a lexical guard; threshold from a labelled eval) ·
+Phase 6 (cheap-first routing with escalation; measured: no gain from these two models, see below).
 
 ## Quick start
 ```bash
@@ -23,6 +24,11 @@ Semantic cache: `ollama pull nomic-embed-text`, then opt a route in with `cache:
 carry `x-sluice-cache: hit|miss|skip`; `Cache-Control: no-cache` / `no-store` are honoured.
 Threshold evidence: `bench/results/cache-eval.md` (ADR 0005).
 
+Quality routing: a route can name a stronger `escalate` route (see `auto` in
+`policies/routes.yaml`). The result was negative and is reported as such:
+`bench/results/routing-eval.md` (ADR 0006).
+
 Tests: `redis-server --port 6399 --save "" &` then `.venv/bin/pytest` (Redis tests skip if it's absent).
-Benchmarks: `bench/chaos.py`, `bench/ratelimit.py`, `bench/trace_demo.py`, `bench/cache_eval.py` → `bench/results/`.
+Benchmarks: `bench/chaos.py`, `bench/ratelimit.py`, `bench/trace_demo.py`, `bench/cache_eval.py`,
+`bench/routing_collect.py` + `bench/routing_eval.py` → `bench/results/`.
 Design decisions: `docs/decisions/`. Per-phase notes: `docs/learning/`.

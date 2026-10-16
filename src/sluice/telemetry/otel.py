@@ -93,6 +93,8 @@ class Metrics:
         self.cost = meter.create_counter("sluice.cost", "USD", "Spend from the route price table")
         self.cache_lookups = meter.create_counter(
             "sluice.cache.lookups", "{lookup}", "Semantic cache lookups by result and skip reason")
+        self.escalations = meter.create_counter(
+            "sluice.escalations", "{escalation}", "Answers re-asked on the stronger route, by check")
         self.fallbacks = meter.create_counter(
             "sluice.fallbacks", "{fallback}", "Times a target was abandoned for the next one")
 

@@ -41,6 +41,8 @@ class OpenAICompatProvider(Provider):
             body["temperature"] = params.temperature
         if params.max_tokens is not None:
             body["max_tokens"] = params.max_tokens
+        if params.response_format is not None:
+            body["response_format"] = params.response_format
         if stream:
             body["stream_options"] = {"include_usage": True}
         return body

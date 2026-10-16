@@ -1,0 +1,60 @@
+{"id": "e01", "difficulty": "easy", "prompt": "What is 17 + 26?", "kind": "number", "expected": 43}
+{"id": "e02", "difficulty": "easy", "prompt": "What is 9 times 8?", "kind": "number", "expected": 72}
+{"id": "e03", "difficulty": "easy", "prompt": "What is 100 minus 37?", "kind": "number", "expected": 63}
+{"id": "e04", "difficulty": "easy", "prompt": "What is 144 divided by 12?", "kind": "number", "expected": 12}
+{"id": "e05", "difficulty": "easy", "prompt": "What is 15% of 80?", "kind": "number", "expected": 12}
+{"id": "e06", "difficulty": "easy", "prompt": "What is the capital of Japan?", "kind": "text", "expected": ["tokyo"]}
+{"id": "e07", "difficulty": "easy", "prompt": "What is the chemical symbol for sodium?", "kind": "text", "expected": ["na"]}
+{"id": "e08", "difficulty": "easy", "prompt": "How many sides does a hexagon have?", "kind": "number", "expected": 6}
+{"id": "e09", "difficulty": "easy", "prompt": "Which planet is known as the Red Planet?", "kind": "text", "expected": ["mars"]}
+{"id": "e10", "difficulty": "easy", "prompt": "What is the largest ocean on Earth?", "kind": "text", "expected": ["pacific"]}
+{"id": "e11", "difficulty": "easy", "prompt": "Who wrote 'Romeo and Juliet'?", "kind": "text", "expected": ["shakespeare"]}
+{"id": "e12", "difficulty": "easy", "prompt": "How many minutes are in 3 hours?", "kind": "number", "expected": 180}
+{"id": "e13", "difficulty": "easy", "prompt": "What is the boiling point of water at sea level in degrees Celsius?", "kind": "number", "expected": 100}
+{"id": "e14", "difficulty": "easy", "prompt": "What is the opposite of 'hot'?", "kind": "text", "expected": ["cold"]}
+{"id": "e15", "difficulty": "easy", "prompt": "What is the plural of 'child'?", "kind": "text", "expected": ["children"]}
+{"id": "e16", "difficulty": "easy", "prompt": "How many meters are in 2 kilometers?", "kind": "number", "expected": 2000}
+{"id": "e17", "difficulty": "easy", "prompt": "What is the next number in the sequence 2, 4, 6, 8?", "kind": "number", "expected": 10}
+{"id": "e18", "difficulty": "easy", "prompt": "What color do you get by mixing blue and yellow paint?", "kind": "text", "expected": ["green"]}
+{"id": "e19", "difficulty": "easy", "prompt": "How many days are in a week?", "kind": "number", "expected": 7}
+{"id": "e20", "difficulty": "easy", "prompt": "What is 9 squared?", "kind": "number", "expected": 81}
+{"id": "e21", "difficulty": "easy", "prompt": "Return a JSON object with keys \"name\" and \"age\" for this sentence: \"Alice is 30 years old.\"", "kind": "json", "expected": {"name": "Alice", "age": 30}}
+{"id": "e22", "difficulty": "easy", "prompt": "Return a JSON object with keys \"city\" and \"country\" for this sentence: \"I live in Lyon, France.\"", "kind": "json", "expected": {"city": "Lyon", "country": "France"}}
+{"id": "e23", "difficulty": "easy", "prompt": "Return a JSON object with a key \"colors\" holding a list of the colors mentioned in: \"The flag is red and white.\"", "kind": "json", "expected": {"colors": ["red", "white"]}}
+{"id": "e24", "difficulty": "easy", "prompt": "Translate the word 'hello' into Spanish.", "kind": "text", "expected": ["hola"]}
+{"id": "e25", "difficulty": "easy", "prompt": "What is the capital of Canada?", "kind": "text", "expected": ["ottawa"]}
+{"id": "e26", "difficulty": "easy", "prompt": "Which gas do plants absorb from the air for photosynthesis?", "kind": "text", "expected": ["carbon dioxide", "co2"]}
+{"id": "e27", "difficulty": "easy", "prompt": "How many legs does a spider have?", "kind": "number", "expected": 8}
+{"id": "e28", "difficulty": "easy", "prompt": "What is 3 cubed?", "kind": "number", "expected": 27}
+{"id": "e29", "difficulty": "easy", "prompt": "What is the freezing point of water in degrees Fahrenheit?", "kind": "number", "expected": 32}
+{"id": "e30", "difficulty": "easy", "prompt": "Which is larger: 0.5 or 0.45?", "kind": "number", "expected": 0.5}
+{"id": "h01", "difficulty": "hard", "prompt": "A shop sells pens at $3 each. Maria buys 4 pens and pays with a $20 bill. How many dollars of change does she get?", "kind": "number", "expected": 8}
+{"id": "h02", "difficulty": "hard", "prompt": "A train travels at 60 km/h for 2.5 hours. How many kilometers does it travel?", "kind": "number", "expected": 150}
+{"id": "h03", "difficulty": "hard", "prompt": "If 5 machines make 5 widgets in 5 minutes, how many minutes would 100 machines take to make 100 widgets?", "kind": "number", "expected": 5}
+{"id": "h04", "difficulty": "hard", "prompt": "A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost, in cents?", "kind": "number", "expected": 5}
+{"id": "h05", "difficulty": "hard", "prompt": "What is 23 times 47?", "kind": "number", "expected": 1081}
+{"id": "h06", "difficulty": "hard", "prompt": "What is 15% of 240, plus 18?", "kind": "number", "expected": 54}
+{"id": "h07", "difficulty": "hard", "prompt": "Tom is twice as old as Jerry. In 5 years the sum of their ages will be 40. How old is Jerry now?", "kind": "number", "expected": 10}
+{"id": "h08", "difficulty": "hard", "prompt": "A rectangle has a perimeter of 30 cm and a length of 9 cm. What is its area in square centimeters?", "kind": "number", "expected": 54}
+{"id": "h09", "difficulty": "hard", "prompt": "How many seconds are in 2.5 hours?", "kind": "number", "expected": 9000}
+{"id": "h10", "difficulty": "hard", "prompt": "If today is Wednesday, what day of the week will it be 10 days from now?", "kind": "text", "expected": ["saturday"]}
+{"id": "h11", "difficulty": "hard", "prompt": "What is the sum of the integers from 1 to 50?", "kind": "number", "expected": 1275}
+{"id": "h12", "difficulty": "hard", "prompt": "A recipe needs 3 eggs for 12 cookies. How many eggs are needed for 40 cookies?", "kind": "number", "expected": 10}
+{"id": "h13", "difficulty": "hard", "prompt": "What is 2 to the power of 12?", "kind": "number", "expected": 4096}
+{"id": "h14", "difficulty": "hard", "prompt": "Sarah has 3 times as many apples as Ben. Together they have 48 apples. How many apples does Sarah have?", "kind": "number", "expected": 36}
+{"id": "h15", "difficulty": "hard", "prompt": "What is 7/8 expressed as a percentage?", "kind": "number", "expected": 87.5}
+{"id": "h16", "difficulty": "hard", "prompt": "How many times does the letter 'r' appear in the word 'strawberry'?", "kind": "number", "expected": 3}
+{"id": "h17", "difficulty": "hard", "prompt": "Spell the word 'planet' backwards.", "kind": "text", "expected": ["tenalp"]}
+{"id": "h18", "difficulty": "hard", "prompt": "What is the 3rd letter of the word 'gateway'?", "kind": "text", "expected": ["t"]}
+{"id": "h19", "difficulty": "hard", "prompt": "How many vowels are in the word 'education'?", "kind": "number", "expected": 5}
+{"id": "h20", "difficulty": "hard", "prompt": "What is the capital of Australia?", "kind": "text", "expected": ["canberra"]}
+{"id": "h21", "difficulty": "hard", "prompt": "Which chemical element has atomic number 26?", "kind": "text", "expected": ["iron", "fe"]}
+{"id": "h22", "difficulty": "hard", "prompt": "In what year did the Berlin Wall fall?", "kind": "number", "expected": 1989}
+{"id": "h23", "difficulty": "hard", "prompt": "What is the smallest prime number greater than 50?", "kind": "number", "expected": 53}
+{"id": "h24", "difficulty": "hard", "prompt": "What is the largest moon of Jupiter?", "kind": "text", "expected": ["ganymede"]}
+{"id": "h25", "difficulty": "hard", "prompt": "Return a JSON object {\"items\": [{\"name\": ..., \"qty\": ...}]} listing what we need: \"We need 3 apples, 2 bananas and 5 carrots.\"", "kind": "json", "expected": {"items": [{"name": "apples", "qty": 3}, {"name": "bananas", "qty": 2}, {"name": "carrots", "qty": 5}]}}
+{"id": "h26", "difficulty": "hard", "prompt": "Return a JSON object with a numeric key \"total\" giving the total price in dollars of: \"2 coffees at $3.50 each and a muffin at $2.25\".", "kind": "json", "expected": {"total": 9.25}}
+{"id": "h27", "difficulty": "hard", "prompt": "Return a JSON object with a boolean key \"is_prime\" saying whether 91 is a prime number.", "kind": "json", "expected": {"is_prime": false}}
+{"id": "h28", "difficulty": "hard", "prompt": "All bloops are razzies and all razzies are lazzies. Are all bloops definitely lazzies? Answer yes or no.", "kind": "text", "expected": ["yes"]}
+{"id": "h29", "difficulty": "hard", "prompt": "A shirt costs $40 after a 20% discount. What was the original price in dollars?", "kind": "number", "expected": 50}
+{"id": "h30", "difficulty": "hard", "prompt": "A clock shows 3:15. What is the angle in degrees between the hour hand and the minute hand?", "kind": "number", "expected": 7.5}

@@ -45,3 +45,14 @@ routes:
     chain:
       - {provider: ollama, upstream_model: "llama3.2:1b", timeout_s: 60, retries: 1}
       - {provider: mock, upstream_model: mock-1, retries: 0}   # degraded last resort
+  auto:                       # Phase 6: cheap model first, re-ask the strong one on bad answers
+    deadline_s: 60
+    chain:
+      - {provider: ollama, upstream_model: "llama3.2:1b", timeout_s: 60, retries: 0,
+         price_in_per_mtok: 0.15, price_out_per_mtok: 0.60}     # fake prices: exercise the logic
+    escalate_on: [empty, truncated, refusal, invalid_json, repetition]
+    escalate:
+      deadline_s: 180
+      chain:
+        - {provider: ollama, upstream_model: "mistral", timeout_s: 180, retries: 0,
+           price_in_per_mtok: 2.50, price_out_per_mtok: 10.00}

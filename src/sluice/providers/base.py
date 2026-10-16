@@ -22,6 +22,7 @@ class ChatParams:
     messages: list[Message]
     temperature: float | None = None
     max_tokens: int | None = None
+    response_format: dict | None = None
 
 
 @dataclass

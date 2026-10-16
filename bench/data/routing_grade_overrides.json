@@ -1,0 +1,30 @@
+{
+ "e13/cheap": {
+  "correct": true,
+  "why": "says 100 \u00b0C; the grader read the last number, 212 (\u00b0F, in brackets)"
+ },
+ "h09/cheap": {
+  "correct": true,
+  "why": "'9000 seconds in 2.5 hours': right, grader read the last number (2.5)"
+ },
+ "h09/strong": {
+  "correct": true,
+  "why": "'9000 seconds in 2.5 hours': right, grader read the last number (2.5)"
+ },
+ "e30/cheap": {
+  "correct": true,
+  "why": "'0.5 is larger than 0.45': right, grader read the last number"
+ },
+ "e30/strong": {
+  "correct": true,
+  "why": "'0.5 is larger than 0.45': right, grader read the last number"
+ },
+ "h03/strong": {
+  "correct": false,
+  "why": "answers '10 minutes'; a later '5' in the sentence fooled the grader"
+ },
+ "e06/strong": {
+  "correct": false,
+  "why": "'Tokyo is not the capital of Japan. The capital ... is Tokyo': contradicts itself"
+ }
+}

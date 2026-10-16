@@ -47,10 +47,18 @@ class Target(BaseModel):
     price_out_per_mtok: float = 0.0
 
 
+Check = Literal["empty", "truncated", "refusal", "invalid_json", "repetition"]
+
+
 class Route(BaseModel):
     chain: list[Target] = Field(min_length=1)  # tried in order
     deadline_s: float = 60.0  # total budget across all attempts
     cache: bool = False  # semantic cache opt-in, per route (see CacheConfig)
+    # Quality routing: if a non-streamed answer fails one of `escalate_on`, ask this (stronger)
+    # route instead and bill both. Streams go straight to it: a sent answer can't be recalled.
+    escalate: Route | None = None
+    escalate_on: list[Check] = Field(
+        default_factory=lambda: ["empty", "truncated", "refusal", "invalid_json", "repetition"])
 
     @model_validator(mode="before")
     @classmethod
@@ -118,9 +126,13 @@ class Settings(BaseModel):
     @model_validator(mode="after")
     def _refs(self):
         for model, route in self.routes.items():
-            for t in route.chain:
-                if t.provider not in self.providers:
-                    raise ValueError(f"route '{model}' references unknown provider '{t.provider}'")
+            r = route
+            while r is not None:
+                for t in r.chain:
+                    if t.provider not in self.providers:
+                        raise ValueError(
+                            f"route '{model}' references unknown provider '{t.provider}'")
+                r = r.escalate
         return self
 
 
