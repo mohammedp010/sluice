@@ -3,6 +3,9 @@ services:
   redis:
     image: redis:7-alpine
     command: ["redis-server", "--save", "", "--appendonly", "no"]
+  jaeger:                          # traces: UI on http://localhost:16686 (in-memory storage)
+    image: jaegertracing/jaeger:2.21.0
+    ports: ["16686:16686", "4318:4318"]   # 4318 = OTLP/HTTP, so a local gateway can export too
   gateway-1: &gw
     build: .
     environment:
@@ -10,7 +13,7 @@ services:
     volumes:
       - ./policies:/app/policies:ro
       - ./data:/data               # shared sqlite key store
-    depends_on: [redis]
+    depends_on: [redis, jaeger]
     ports: ["8001:8000"]
   gateway-2:
     <<: *gw

@@ -82,8 +82,17 @@ class LimitsConfig(BaseModel):
     paid_daily_call_cap: int = 50
 
 
+class TelemetryConfig(BaseModel):
+    service_name: str = "sluice"
+    traces: Literal["none", "console", "otlp"] = "none"
+    otlp_endpoint: str = "http://localhost:4318"  # OTLP/HTTP; Jaeger listens here
+    prometheus: bool = False  # serve /metrics
+    ledger: bool = True  # one usage row per request in auth.db_path (cost attribution)
+
+
 class Settings(BaseModel):
     auth: AuthConfig = Field(default_factory=AuthConfig)
+    telemetry: TelemetryConfig = Field(default_factory=TelemetryConfig)
     state: StateConfig = Field(default_factory=StateConfig)
     limits: LimitsConfig = Field(default_factory=LimitsConfig)
     providers: dict[str, ProviderConfig]

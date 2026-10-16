@@ -30,7 +30,8 @@ async def main():
     keys = KeyStore(":memory:")
     limits = {"alpha": 30, "beta": 60, "gamma": 10}
     raws = {n: keys.create(n, rpm=r)[0] for n, r in limits.items()}
-    settings = Settings(providers={"mock": {"type": "mock"}}, routes={"m": ROUTE})
+    settings = Settings(providers={"mock": {"type": "mock"}}, routes={"m": ROUTE},
+                        telemetry={"ledger": False})
     apps = [create_app(settings, {"mock": MockProvider()}, state=RedisState(URL), keystore=keys)
             for _ in range(2)]
     clients = {n: [client_for(a, raw) for a in apps] for n, raw in raws.items()}

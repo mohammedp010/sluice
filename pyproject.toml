@@ -10,6 +10,9 @@ dependencies = [
     "pydantic>=2.7",
     "pyyaml>=6",
     "redis>=5",
+    "opentelemetry-sdk>=1.30",
+    "opentelemetry-exporter-otlp-proto-http>=1.30",
+    "opentelemetry-exporter-prometheus>=0.51b0",  # only ever published as betas
 ]
 
 [project.optional-dependencies]

@@ -8,6 +8,7 @@ import json
 from collections.abc import AsyncIterator
 
 import httpx
+from opentelemetry.propagate import inject
 
 from .base import ChatParams, Chunk, Completion, Provider, ProviderError, Usage
 
@@ -45,6 +46,14 @@ class OpenAICompatProvider(Provider):
         return body
 
     @staticmethod
+    def _headers() -> dict[str, str]:
+        """W3C `traceparent` for the current (attempt) span. An upstream that is itself traced
+        continues our trace; one that isn't (Ollama) just ignores the header."""
+        h: dict[str, str] = {}
+        inject(h)
+        return h
+
+    @staticmethod
     def _usage(raw: dict | None) -> Usage | None:
         if not raw:
             return None
@@ -52,7 +61,8 @@ class OpenAICompatProvider(Provider):
 
     async def complete(self, params: ChatParams) -> Completion:
         try:
-            r = await self._client.post("/chat/completions", json=self._body(params, False))
+            r = await self._client.post(
+                "/chat/completions", json=self._body(params, False), headers=self._headers())
         except httpx.HTTPError as e:
             raise ProviderError(f"{self.name}: {type(e).__name__}: {e}") from e
         if r.status_code != 200:
@@ -72,7 +82,7 @@ class OpenAICompatProvider(Provider):
     async def stream(self, params: ChatParams) -> AsyncIterator[Chunk]:
         try:
             async with self._client.stream(
-                "POST", "/chat/completions", json=self._body(params, True)
+                "POST", "/chat/completions", json=self._body(params, True), headers=self._headers()
             ) as r:
                 if r.status_code != 200:
                     body = (await r.aread()).decode(errors="replace")[:200]

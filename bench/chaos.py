@@ -34,6 +34,7 @@ def build():
             {"provider": "primary", "upstream_model": "x", "retries": 1, "timeout_s": 0.25},
             {"provider": "backup", "upstream_model": "x", "retries": 0, "timeout_s": 0.25},
         ]}},
+        telemetry={"ledger": False},  # benchmark traffic must not land in the real cost ledger
     )
     app = create_app(settings, {"primary": primary, "backup": backup})
     return app, primary

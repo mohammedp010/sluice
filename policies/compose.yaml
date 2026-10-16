@@ -5,6 +5,11 @@ auth:
 state:
   backend: redis
   redis_url: redis://redis:6379/0
+telemetry:
+  traces: otlp
+  otlp_endpoint: http://jaeger:4318
+  prometheus: true
+  ledger: true
 limits:
   default_completion_estimate: 256
   paid_daily_call_cap: 50

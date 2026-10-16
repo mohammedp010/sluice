@@ -5,6 +5,11 @@ auth:
 state:
   backend: memory             # "redis" to share limits across instances
   redis_url: redis://localhost:6379/0
+telemetry:
+  traces: none                # "otlp" + `docker compose up jaeger` to see traces at :16686
+  otlp_endpoint: http://localhost:4318
+  prometheus: true            # GET /metrics
+  ledger: true                # per-request cost rows; report: python -m sluice.report --by team
 limits:
   default_completion_estimate: 256
   paid_daily_call_cap: 50

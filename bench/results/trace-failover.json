@@ -1,0 +1,253 @@
+[
+  {
+    "name": "sluice.auth",
+    "context": {
+      "trace_id": "0x65cc2b8aa874403ccca4f19e6ead883c",
+      "span_id": "0xfc6b46247746c2bd",
+      "trace_state": "[]"
+    },
+    "kind": "SpanKind.INTERNAL",
+    "parent_id": "0xb8ad5ebecd33faf4",
+    "start_time": "2026-10-16T18:31:48.072755Z",
+    "end_time": "2026-10-16T18:31:48.072830Z",
+    "status": {
+      "status_code": "UNSET"
+    },
+    "attributes": {},
+    "events": [],
+    "links": [],
+    "resource": {
+      "attributes": {
+        "telemetry.sdk.language": "python",
+        "telemetry.sdk.name": "opentelemetry",
+        "telemetry.sdk.version": "1.45.1",
+        "service.instance.id": "1ce4d538-88ce-4c69-ac1d-7e940d9565f3",
+        "service.name": "sluice-demo"
+      },
+      "schema_url": ""
+    }
+  },
+  {
+    "name": "sluice.limits",
+    "context": {
+      "trace_id": "0x65cc2b8aa874403ccca4f19e6ead883c",
+      "span_id": "0x22df92a5608b13fc",
+      "trace_state": "[]"
+    },
+    "kind": "SpanKind.INTERNAL",
+    "parent_id": "0xb8ad5ebecd33faf4",
+    "start_time": "2026-10-16T18:31:48.072876Z",
+    "end_time": "2026-10-16T18:31:48.073033Z",
+    "status": {
+      "status_code": "UNSET"
+    },
+    "attributes": {
+      "sluice.tokens.estimate": 270
+    },
+    "events": [],
+    "links": [],
+    "resource": {
+      "attributes": {
+        "telemetry.sdk.language": "python",
+        "telemetry.sdk.name": "opentelemetry",
+        "telemetry.sdk.version": "1.45.1",
+        "service.instance.id": "1ce4d538-88ce-4c69-ac1d-7e940d9565f3",
+        "service.name": "sluice-demo"
+      },
+      "schema_url": ""
+    }
+  },
+  {
+    "name": "sluice.cache",
+    "context": {
+      "trace_id": "0x65cc2b8aa874403ccca4f19e6ead883c",
+      "span_id": "0xf4b6aacd4610f6e4",
+      "trace_state": "[]"
+    },
+    "kind": "SpanKind.INTERNAL",
+    "parent_id": "0xb8ad5ebecd33faf4",
+    "start_time": "2026-10-16T18:31:48.073065Z",
+    "end_time": "2026-10-16T18:31:48.073069Z",
+    "status": {
+      "status_code": "UNSET"
+    },
+    "attributes": {
+      "sluice.cache.result": "disabled"
+    },
+    "events": [],
+    "links": [],
+    "resource": {
+      "attributes": {
+        "telemetry.sdk.language": "python",
+        "telemetry.sdk.name": "opentelemetry",
+        "telemetry.sdk.version": "1.45.1",
+        "service.instance.id": "1ce4d538-88ce-4c69-ac1d-7e940d9565f3",
+        "service.name": "sluice-demo"
+      },
+      "schema_url": ""
+    }
+  },
+  {
+    "name": "chat big-model",
+    "context": {
+      "trace_id": "0x65cc2b8aa874403ccca4f19e6ead883c",
+      "span_id": "0x305cdd77c556b324",
+      "trace_state": "[]"
+    },
+    "kind": "SpanKind.CLIENT",
+    "parent_id": "0xb8ad5ebecd33faf4",
+    "start_time": "2026-10-16T18:31:48.073115Z",
+    "end_time": "2026-10-16T18:31:48.104249Z",
+    "status": {
+      "status_code": "ERROR",
+      "description": "primary: injected failure"
+    },
+    "attributes": {
+      "gen_ai.operation.name": "chat",
+      "gen_ai.provider.name": "primary",
+      "gen_ai.request.model": "big-model",
+      "sluice.attempt": 0,
+      "gen_ai.request.max_tokens": 1024,
+      "error.type": "503"
+    },
+    "events": [],
+    "links": [],
+    "resource": {
+      "attributes": {
+        "telemetry.sdk.language": "python",
+        "telemetry.sdk.name": "opentelemetry",
+        "telemetry.sdk.version": "1.45.1",
+        "service.instance.id": "1ce4d538-88ce-4c69-ac1d-7e940d9565f3",
+        "service.name": "sluice-demo"
+      },
+      "schema_url": ""
+    }
+  },
+  {
+    "name": "chat big-model",
+    "context": {
+      "trace_id": "0x65cc2b8aa874403ccca4f19e6ead883c",
+      "span_id": "0xba32886a0023bca2",
+      "trace_state": "[]"
+    },
+    "kind": "SpanKind.CLIENT",
+    "parent_id": "0xb8ad5ebecd33faf4",
+    "start_time": "2026-10-16T18:31:48.139804Z",
+    "end_time": "2026-10-16T18:31:48.170888Z",
+    "status": {
+      "status_code": "ERROR",
+      "description": "primary: injected failure"
+    },
+    "attributes": {
+      "gen_ai.operation.name": "chat",
+      "gen_ai.provider.name": "primary",
+      "gen_ai.request.model": "big-model",
+      "sluice.attempt": 1,
+      "gen_ai.request.max_tokens": 1024,
+      "error.type": "503"
+    },
+    "events": [],
+    "links": [],
+    "resource": {
+      "attributes": {
+        "telemetry.sdk.language": "python",
+        "telemetry.sdk.name": "opentelemetry",
+        "telemetry.sdk.version": "1.45.1",
+        "service.instance.id": "1ce4d538-88ce-4c69-ac1d-7e940d9565f3",
+        "service.name": "sluice-demo"
+      },
+      "schema_url": ""
+    }
+  },
+  {
+    "name": "chat small-model",
+    "context": {
+      "trace_id": "0x65cc2b8aa874403ccca4f19e6ead883c",
+      "span_id": "0xa3004343e727ae77",
+      "trace_state": "[]"
+    },
+    "kind": "SpanKind.CLIENT",
+    "parent_id": "0xb8ad5ebecd33faf4",
+    "start_time": "2026-10-16T18:31:48.170964Z",
+    "end_time": "2026-10-16T18:31:48.211549Z",
+    "status": {
+      "status_code": "UNSET"
+    },
+    "attributes": {
+      "gen_ai.operation.name": "chat",
+      "gen_ai.provider.name": "backup",
+      "gen_ai.request.model": "small-model",
+      "sluice.attempt": 0,
+      "gen_ai.request.max_tokens": 1024
+    },
+    "events": [],
+    "links": [],
+    "resource": {
+      "attributes": {
+        "telemetry.sdk.language": "python",
+        "telemetry.sdk.name": "opentelemetry",
+        "telemetry.sdk.version": "1.45.1",
+        "service.instance.id": "1ce4d538-88ce-4c69-ac1d-7e940d9565f3",
+        "service.name": "sluice-demo"
+      },
+      "schema_url": ""
+    }
+  },
+  {
+    "name": "chat chat-default",
+    "context": {
+      "trace_id": "0x65cc2b8aa874403ccca4f19e6ead883c",
+      "span_id": "0xb8ad5ebecd33faf4",
+      "trace_state": "[]"
+    },
+    "kind": "SpanKind.SERVER",
+    "parent_id": null,
+    "start_time": "2026-10-16T18:31:48.072720Z",
+    "end_time": "2026-10-16T18:31:48.211983Z",
+    "status": {
+      "status_code": "UNSET"
+    },
+    "attributes": {
+      "gen_ai.operation.name": "chat",
+      "gen_ai.request.model": "chat-default",
+      "sluice.stream": false,
+      "sluice.key.id": 1,
+      "sluice.team": "search",
+      "sluice.app": "web",
+      "http.response.status_code": 200,
+      "sluice.outcome": "ok",
+      "sluice.provider": "backup",
+      "sluice.attempts": 3,
+      "sluice.fallbacks": 1,
+      "gen_ai.response.model": "small-model",
+      "gen_ai.response.finish_reasons": [
+        "stop"
+      ],
+      "gen_ai.usage.input_tokens": 6,
+      "gen_ai.usage.output_tokens": 6,
+      "sluice.cost_usd": 4e-06
+    },
+    "events": [
+      {
+        "name": "sluice.fallback",
+        "timestamp": "2026-10-16T18:31:48.170924Z",
+        "attributes": {
+          "sluice.provider": "primary",
+          "error.type": "503",
+          "sluice.next_provider": "backup"
+        }
+      }
+    ],
+    "links": [],
+    "resource": {
+      "attributes": {
+        "telemetry.sdk.language": "python",
+        "telemetry.sdk.name": "opentelemetry",
+        "telemetry.sdk.version": "1.45.1",
+        "service.instance.id": "1ce4d538-88ce-4c69-ac1d-7e940d9565f3",
+        "service.name": "sluice-demo"
+      },
+      "schema_url": ""
+    }
+  }
+]

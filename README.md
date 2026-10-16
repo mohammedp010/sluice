@@ -4,7 +4,8 @@ An OpenAI-compatible LLM gateway built phase by phase as a learning project (see
 Free to run: mock + local Ollama by default; paid providers are blocked unless opted in.
 
 **Done so far:** Phase 1 (gateway + streaming) · Phase 2 (fallback, retries, circuit breaker, chaos tests) ·
-Phase 3 (virtual keys, RPM/TPM limits, budgets, kill switch).
+Phase 3 (virtual keys, RPM/TPM limits, budgets, kill switch) · Phase 4 (OpenTelemetry traces + metrics,
+per-team cost ledger).
 
 ## Quick start
 ```bash
@@ -14,6 +15,10 @@ python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'
 curl localhost:8000/v1/chat/completions -H "Authorization: Bearer <key>" -H 'content-type: application/json' \
   -d '{"model":"mock-model","messages":[{"role":"user","content":"hi"}]}'
 ```
+Observability: every response has `x-sluice-trace-id`; `GET /metrics` (Prometheus);
+`python -m sluice.report --by team|app|key|model|provider|day` for cost; traces in Jaeger with
+`docker compose up -d jaeger` and `telemetry.traces: otlp` in the policy (ADR 0004).
+
 Tests: `redis-server --port 6399 --save "" &` then `.venv/bin/pytest` (Redis tests skip if it's absent).
-Benchmarks: `bench/chaos.py`, `bench/ratelimit.py` → `bench/results/`.
+Benchmarks: `bench/chaos.py`, `bench/ratelimit.py`, `bench/trace_demo.py` → `bench/results/`.
 Design decisions: `docs/decisions/`. Per-phase notes: `docs/learning/`.
