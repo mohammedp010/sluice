@@ -1,10 +1,11 @@
 """Phase 6, step 2 of 2: which cheap check is worth its cost? (instant; re-run freely)
 
-    python bench/routing_eval.py       # reads bench/data/routing_runs.jsonl (routing_collect.py)
+    python bench/routing_eval.py --strong qwen2.5:3b   # default: mistral:latest
+Reads bench/data/routing_runs.jsonl (routing_collect.py); writes one report per strong model.
 
 Every policy answers with the cheap model, runs a check, and escalates to the strong model when
 the check fires. Quality is checked against reference answers, never by an LLM. Cost uses the
-token counts the models really produced, priced like a typical small/large pair (strong = 16x).
+token counts the models really produced, priced in proportion to parameter count.
 Random escalation lands on the straight line between always-cheap and always-strong, so a check
 only adds value if its point is ABOVE that line.
 
@@ -12,6 +13,7 @@ Writes bench/results/routing-eval.{md,json,svg}.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import math
 import random
@@ -23,14 +25,18 @@ from sluice.quality.signals import heuristic_flags, parse_json
 
 ROOT = Path(__file__).parent
 OUT = ROOT / "results"
-PRICES = {"cheap": (0.15, 0.60), "strong": (2.50, 10.00)}  # USD / Mtok in, out
+CHEAP = "llama3.2:1b"
+# USD / Mtok (in, out): proportional to parameter count, anchored at $0.15/$0.60 for ~1B. Only
+# ratios matter: every cost is reported relative to always-strong.
+PARAMS_B = {"llama3.2:1b": 1, "qwen2.5:3b": 3, "mistral:latest": 7}
+PRICES = {m: (0.15 * b, 0.60 * b) for m, b in PARAMS_B.items()}
 FINAL = re.compile(r"final answer\s*(?:is)?\s*[:\-]?\s*(.+)", re.IGNORECASE)
 NUM = re.compile(r"-?\d[\d,]*(?:\.\d+)?|-?\.\d+")
 NUMBER_WORDS = {w: i for i, w in enumerate(
     ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"])}
 WORDS = re.compile(r"\b(" + "|".join(NUMBER_WORDS) + r")\b", re.IGNORECASE)  # "six sides"
 _OV = ROOT / "data/routing_grade_overrides.json"
-# manual audit results: {"<id>/<cheap|strong>": {"correct": bool, "why": "..."}}
+# manual audit results: {"<id>/<model>": {"correct": bool, "why": "..."}}
 OVERRIDES = {tuple(k.split("/")): v["correct"]
              for k, v in (json.loads(_OV.read_text()) if _OV.exists() else {}).items()}
 
@@ -115,30 +121,30 @@ def judge_says_no(text: str) -> bool | None:
     return {"no": True, "yes": False}.get(w[0]) if w else None
 
 
-def cost(role: str, r: dict) -> float:
-    pin, pout = PRICES[role]
+def cost(r: dict) -> float:
+    pin, pout = PRICES[r["model"]]
     return (r["prompt_tokens"] * pin + r["completion_tokens"] * pout) / 1e6
 
 
 # --- policies ---------------------------------------------------------------------------------
 
-def per_item(items, runs):
+def per_item(items, runs, strong):
     rows = []
     for it in items:
-        g = runs[(it["id"], "cheap", "greedy", 0)]
-        s = runs[(it["id"], "strong", "greedy", 0)]
-        samples = [runs[(it["id"], "cheap", "sample", n)] for n in range(3)]
-        judge = runs[(it["id"], "cheap", "judge", 0)]
+        g = runs[(it["id"], CHEAP, "greedy", 0)]
+        s = runs[(it["id"], strong, "greedy", 0)]
+        samples = [runs[(it["id"], CHEAP, "sample", n)] for n in range(3)]
+        judge = runs[(it["id"], CHEAP, "judge", 0)]
         c0 = canon(it, g["text"])
         votes = sum(agrees(c0, canon(it, x["text"])) for x in samples)
         flags = heuristic_flags(g["text"], g["finish_reason"], it["kind"] == "json")
         rows.append({
             "id": it["id"], "difficulty": it["difficulty"],
-            "cheap_ok": OVERRIDES.get((it["id"], "cheap"), correct(it, g["text"])),
-            "strong_ok": OVERRIDES.get((it["id"], "strong"), correct(it, s["text"])),
-            "cost_cheap": cost("cheap", g), "cost_strong": cost("strong", s),
-            "cost_samples": sum(cost("cheap", x) for x in samples),
-            "cost_judge": cost("cheap", judge),
+            "cheap_ok": OVERRIDES.get((it["id"], CHEAP), correct(it, g["text"])),
+            "strong_ok": OVERRIDES.get((it["id"], strong), correct(it, s["text"])),
+            "cost_cheap": cost(g), "cost_strong": cost(s),
+            "cost_samples": sum(cost(x) for x in samples),
+            "cost_judge": cost(judge),
             "ms_cheap": g["ms"], "ms_strong": s["ms"],
             "ms_samples": sum(x["ms"] for x in samples), "ms_judge": judge["ms"],
             "flags": flags,
@@ -202,7 +208,7 @@ def summarise(res, base_cost, rng, boots=2000):
 # --- chart: cost vs accuracy, one point per policy, CI whiskers, random-escalation line ---------
 
 def svg(points: dict) -> str:
-    w, h, ml, mr, mt, mb = 720, 440, 56, 24, 40, 52
+    w, h, ml, mr, mt, mb = 720, 450, 56, 24, 52, 52
     xs = [p["rel_cost"] for p in points.values()] + [p["cost_hi"] for p in points.values()]
     xmax = max(1.1, max(xs) * 1.05)
     lo = min(p["acc_lo"] for p in points.values())
@@ -240,9 +246,11 @@ def svg(points: dict) -> str:
     o.append(f'<line x1="{x(c["rel_cost"]):.1f}" y1="{y(c["accuracy"]):.1f}" '
              f'x2="{x(s["rel_cost"]):.1f}" y2="{y(s["accuracy"]):.1f}" '
              'stroke-dasharray="4 4" style="stroke:var(--ink2)"/>')
-    o.append(f'<text class="m" x="{x(0.6):.1f}" '
-             f'y="{y((c["accuracy"] + s["accuracy"]) / 2) + 16:.1f}" text-anchor="middle">'
-             'random escalation</text>')
+    # explained in a legend, not on the line: an in-plot label collides with whatever lands there
+    o.append(f'<line x1="{ml}" x2="{ml + 22}" y1="32" y2="32" stroke-dasharray="4 4" '
+             'style="stroke:var(--ink2)"/>')
+    o.append(f'<text class="m" x="{ml + 28}" y="36">random escalation: a check is only worth '
+             'something above this line · grey = baselines · hollow = oracle</text>')
     for name, p in points.items():
         px, py = x(p["rel_cost"]), y(p["accuracy"])
         base = name.startswith(("always", "oracle"))
@@ -259,19 +267,22 @@ def svg(points: dict) -> str:
                  f'accurate at {p["rel_cost"]:.2f}× cost, {p["escalated"]:.0%} escalated'
                  '</title></circle>')
         dx, dy, anchor = p.get("label_at", (8, -8, "start"))
+        if anchor == "start" and px + dx + 6.2 * len(name) > w - mr:  # would run off the edge
+            dx, anchor = -dx, "end"
         o.append(f'<text class="t" x="{px + dx:.1f}" y="{py + dy:.1f}" '
                  f'text-anchor="{anchor}">{name}</text>')
     o.append("</svg>")
     return "\n".join(o) + "\n"
 
 
-def main():
+def main(strong: str):
     items = [json.loads(x) for x in (ROOT / "data/routing_prompts.jsonl").read_text().splitlines()]
     runs = {}
     for line in (ROOT / "data/routing_runs.jsonl").read_text().splitlines():
         r = json.loads(line)
-        runs[(r["id"], r["role"], r["mode"], r["n"])] = r
-    rows = per_item(items, runs)
+        runs[(r["id"], r["model"], r["mode"], r["n"])] = r
+    rows = per_item(items, runs, strong)
+    slug = strong.split(":")[0]
     rng = random.Random(0)
     base = sum(r["cost_strong"] for r in rows) / len(rows)
     names = ["always cheap", "always strong", *POLICIES]
@@ -317,9 +328,9 @@ def main():
     results["oracle (upper bound)"]["label_at"] = (8, 4, "start")
 
     OUT.mkdir(exist_ok=True)
-    (OUT / "routing-eval.json").write_text(json.dumps(
+    (OUT / f"routing-eval-{slug}.json").write_text(json.dumps(
         {"policies": results, "items": rows}, indent=1, default=str) + "\n")
-    (OUT / "routing-eval.svg").write_text(svg(results))
+    (OUT / f"routing-eval-{slug}.svg").write_text(svg(results))
 
     c, s = results["always cheap"], results["always strong"]
 
@@ -334,16 +345,17 @@ def main():
         "",
         (f"Generated by `bench/routing_eval.py` from `bench/data/routing_runs.jsonl` "
          f"(collected by `bench/routing_collect.py`, local Ollama, $0). {n} prompts with "
-         "reference answers, half easy and half hard. Cheap = `llama3.2:1b`, strong = "
-         "`mistral` 7B. Grading compares against the reference; no LLM grades the results."),
+         f"reference answers, half easy and half hard. Cheap = `{CHEAP}`, strong = "
+         f"`{strong}`. Grading compares against the reference; no LLM grades the results."),
         "",
         ("Cost is the real token counts at small/large-model list-style prices "
-         f"(cheap ${PRICES['cheap'][0]}/${PRICES['cheap'][1]}, strong "
-         f"${PRICES['strong'][0]}/${PRICES['strong'][1]} per Mtok in/out) and is shown "
+         f"(cheap ${PRICES[CHEAP][0]:.2f}/${PRICES[CHEAP][1]:.2f}, strong "
+         f"${PRICES[strong][0]:.2f}/${PRICES[strong][1]:.2f} per Mtok in/out, i.e. in "
+         "proportion to parameter count) and is shown "
          "relative to always-strong. Brackets are 95% bootstrap intervals over prompts: with "
          f"{n} prompts, differences under ~10 points are noise."),
         "",
-        "![accuracy vs cost per routing policy](routing-eval.svg)",
+        f"![accuracy vs cost per routing policy](routing-eval-{slug}.svg)",
         "",
         ("| policy | accuracy | cost vs always-strong | escalated | vs random escalation | "
         "mean latency |"),
@@ -385,9 +397,11 @@ def main():
         ("- `heuristics + format` uses this eval's 'Final answer:' convention, which the "
          "gateway can't know in general, so it is not a production check."),
     ]
-    (OUT / "routing-eval.md").write_text("\n".join(md) + "\n")
+    (OUT / f"routing-eval-{slug}.md").write_text("\n".join(md) + "\n")
     print("\n".join(md))
 
 
 if __name__ == "__main__":
-    main()
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--strong", default="mistral:latest")
+    main(ap.parse_args().strong)

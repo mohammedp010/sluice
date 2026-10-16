@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 450" font-family="system-ui, -apple-system, sans-serif" font-size="11" role="img" aria-label="Accuracy versus relative cost for each routing policy">
+<style>
+:root{--bg:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--grid:#e4e3df;--s1:#2a78d6}@media (prefers-color-scheme: dark){:root{--bg:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--grid:#3a3936;--s1:#3987e5}}
+.t{fill:var(--ink)} .m{fill:var(--ink2)} .g{stroke:var(--grid);stroke-width:1}
+</style>
+<rect width="720" height="450" fill="var(--bg)"/>
+<text class="t" x="56" y="18" font-weight="600">Accuracy vs cost per policy (n=60 prompts, 95% bootstrap CIs)</text>
+<line class="g" x1="56" x2="696" y1="398.0" y2="398.0"/><text class="m" x="50" y="402.0" text-anchor="end">60%</text>
+<line class="g" x1="56" x2="696" y1="311.5" y2="311.5"/><text class="m" x="50" y="315.5" text-anchor="end">70%</text>
+<line class="g" x1="56" x2="696" y1="225.0" y2="225.0"/><text class="m" x="50" y="229.0" text-anchor="end">80%</text>
+<line class="g" x1="56" x2="696" y1="138.5" y2="138.5"/><text class="m" x="50" y="142.5" text-anchor="end">90%</text>
+<line class="g" x1="56" x2="696" y1="52.0" y2="52.0"/><text class="m" x="50" y="56.0" text-anchor="end">100%</text>
+<text class="m" x="56.0" y="414" text-anchor="middle">0×</text>
+<text class="m" x="129.3" y="414" text-anchor="middle">0.25×</text>
+<text class="m" x="202.6" y="414" text-anchor="middle">0.5×</text>
+<text class="m" x="275.9" y="414" text-anchor="middle">0.75×</text>
+<text class="m" x="349.2" y="414" text-anchor="middle">1×</text>
+<text class="m" x="422.5" y="414" text-anchor="middle">1.25×</text>
+<text class="m" x="495.8" y="414" text-anchor="middle">1.5×</text>
+<text class="m" x="569.1" y="414" text-anchor="middle">1.75×</text>
+<text class="m" x="642.4" y="414" text-anchor="middle">2×</text>
+<text class="m" x="376.0" y="436" text-anchor="middle">cost relative to always-strong</text>
+<line x1="141.0" y1="210.6" x2="349.2" y2="181.8" stroke-dasharray="4 4" style="stroke:var(--ink2)"/>
+<line x1="56" x2="78" y1="32" y2="32" stroke-dasharray="4 4" style="stroke:var(--ink2)"/>
+<text class="m" x="84" y="36">random escalation: a check is only worth something above this line · grey = baselines · hollow = oracle</text>
+<line x1="141.0" x2="141.0" y1="297.1" y2="138.5" style="stroke:var(--ink2)" stroke-width="1.5" opacity="0.5"/>
+<line x1="124.6" x2="158.8" y1="210.6" y2="210.6" style="stroke:var(--ink2)" stroke-width="1.5" opacity="0.5"/>
+<circle cx="141.0" cy="210.6" r="5" style="fill:var(--ink2);stroke:var(--ink2)" stroke-width="2"><title>always cheap: 82% accurate at 0.29× cost, 0% escalated</title></circle>
+<text class="t" x="149.0" y="202.6" text-anchor="start">always cheap</text>
+<line x1="349.2" x2="349.2" y1="268.2" y2="109.7" style="stroke:var(--ink2)" stroke-width="1.5" opacity="0.5"/>
+<line x1="289.1" x2="415.6" y1="181.8" y2="181.8" style="stroke:var(--ink2)" stroke-width="1.5" opacity="0.5"/>
+<circle cx="349.2" cy="181.8" r="5" style="fill:var(--ink2);stroke:var(--ink2)" stroke-width="2"><title>always strong: 85% accurate at 1.00× cost, 100% escalated</title></circle>
+<text class="t" x="357.2" y="197.8" text-anchor="start">always strong</text>
+<line x1="145.2" x2="145.2" y1="297.1" y2="124.1" style="stroke:var(--s1)" stroke-width="1.5" opacity="0.5"/>
+<line x1="125.3" x2="166.4" y1="210.6" y2="210.6" style="stroke:var(--s1)" stroke-width="1.5" opacity="0.5"/>
+<circle cx="145.2" cy="210.6" r="5" style="fill:var(--s1);stroke:var(--s1)" stroke-width="2"><title>heuristics: 82% accurate at 0.30× cost, 2% escalated</title></circle>
+<text class="t" x="153.2" y="226.6" text-anchor="start">heuristics</text>
+<line x1="318.4" x2="318.4" y1="311.5" y2="138.5" style="stroke:var(--s1)" stroke-width="1.5" opacity="0.5"/>
+<line x1="253.5" x2="390.4" y1="225.0" y2="225.0" style="stroke:var(--s1)" stroke-width="1.5" opacity="0.5"/>
+<circle cx="318.4" cy="225.0" r="5" style="fill:var(--s1);stroke:var(--s1)" stroke-width="2"><title>heuristics + format: 80% accurate at 0.90× cost, 67% escalated</title></circle>
+<text class="t" x="318.4" y="247.0" text-anchor="middle">heuristics + format</text>
+<line x1="537.8" x2="537.8" y1="225.0" y2="95.3" style="stroke:var(--s1)" stroke-width="1.5" opacity="0.5"/>
+<line x1="433.8" x2="665.5" y1="152.9" y2="152.9" style="stroke:var(--s1)" stroke-width="1.5" opacity="0.5"/>
+<circle cx="537.8" cy="152.9" r="5" style="fill:var(--s1);stroke:var(--s1)" stroke-width="2"><title>self-consistency (any disagree): 88% accurate at 1.64× cost, 42% escalated</title></circle>
+<text class="t" x="529.8" y="144.9" text-anchor="end">self-consistency (any disagree)</text>
+<line x1="493.5" x2="493.5" y1="239.4" y2="95.3" style="stroke:var(--s1)" stroke-width="1.5" opacity="0.5"/>
+<line x1="390.1" x2="622.6" y1="167.3" y2="167.3" style="stroke:var(--s1)" stroke-width="1.5" opacity="0.5"/>
+<circle cx="493.5" cy="167.3" r="5" style="fill:var(--s1);stroke:var(--s1)" stroke-width="2"><title>self-consistency (majority): 87% accurate at 1.49× cost, 23% escalated</title></circle>
+<text class="t" x="501.5" y="159.3" text-anchor="start">self-consistency (majority)</text>
+<line x1="406.6" x2="406.6" y1="268.2" y2="109.7" style="stroke:var(--s1)" stroke-width="1.5" opacity="0.5"/>
+<line x1="345.5" x2="473.3" y1="181.8" y2="181.8" style="stroke:var(--s1)" stroke-width="1.5" opacity="0.5"/>
+<circle cx="406.6" cy="181.8" r="5" style="fill:var(--s1);stroke:var(--s1)" stroke-width="2"><title>1B judge: 85% accurate at 1.20× cost, 87% escalated</title></circle>
+<text class="t" x="406.6" y="169.8" text-anchor="middle">1B judge</text>
+<line x1="260.3" x2="260.3" y1="282.7" y2="124.1" style="stroke:var(--s1)" stroke-width="1.5" opacity="0.5"/>
+<line x1="202.2" x2="327.6" y1="196.2" y2="196.2" style="stroke:var(--s1)" stroke-width="1.5" opacity="0.5"/>
+<circle cx="260.3" cy="196.2" r="5" style="fill:var(--s1);stroke:var(--s1)" stroke-width="2"><title>1B judge on 50%: 83% accurate at 0.70× cost, 38% escalated</title></circle>
+<text class="t" x="268.3" y="188.2" text-anchor="start">1B judge on 50%</text>
+<line x1="190.3" x2="190.3" y1="167.3" y2="66.4" style="stroke:var(--ink2)" stroke-width="1.5" opacity="0.5"/>
+<line x1="151.7" x2="243.9" y1="109.7" y2="109.7" style="stroke:var(--ink2)" stroke-width="1.5" opacity="0.5"/>
+<circle cx="190.3" cy="109.7" r="5" style="fill:var(--bg);stroke:var(--ink2)" stroke-width="2"><title>oracle (upper bound): 93% accurate at 0.46× cost, 18% escalated</title></circle>
+<text class="t" x="198.3" y="113.7" text-anchor="start">oracle (upper bound)</text>
+</svg>

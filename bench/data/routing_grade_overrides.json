@@ -1,30 +1,38 @@
 {
- "e13/cheap": {
+ "e13/llama3.2:1b": {
   "correct": true,
   "why": "says 100 \u00b0C; the grader read the last number, 212 (\u00b0F, in brackets)"
  },
- "h09/cheap": {
+ "h09/llama3.2:1b": {
   "correct": true,
   "why": "'9000 seconds in 2.5 hours': right, grader read the last number (2.5)"
  },
- "h09/strong": {
+ "h09/mistral:latest": {
   "correct": true,
   "why": "'9000 seconds in 2.5 hours': right, grader read the last number (2.5)"
  },
- "e30/cheap": {
+ "e30/llama3.2:1b": {
   "correct": true,
   "why": "'0.5 is larger than 0.45': right, grader read the last number"
  },
- "e30/strong": {
+ "e30/mistral:latest": {
   "correct": true,
   "why": "'0.5 is larger than 0.45': right, grader read the last number"
  },
- "h03/strong": {
+ "h03/mistral:latest": {
   "correct": false,
   "why": "answers '10 minutes'; a later '5' in the sentence fooled the grader"
  },
- "e06/strong": {
+ "e06/mistral:latest": {
   "correct": false,
   "why": "'Tokyo is not the capital of Japan. The capital ... is Tokyo': contradicts itself"
+ },
+ "e30/qwen2.5:3b": {
+  "correct": true,
+  "why": "'0.5 is larger than 0.45': right, grader read the last number"
+ },
+ "h12/qwen2.5:3b": {
+  "correct": true,
+  "why": "'10 eggs are needed for 40 cookies': right, grader read the last number (40)"
  }
 }

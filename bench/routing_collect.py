@@ -1,6 +1,8 @@
 """Phase 6, step 1 of 2: run the models once and keep everything (slow; ~35 min on an M2).
 
-    python bench/routing_collect.py        # resumable: re-running skips calls already saved
+    python bench/routing_collect.py                      # strong = mistral:latest
+    python bench/routing_collect.py --strong qwen2.5:3b  # only the strong calls are new
+Resumable: re-running skips calls already saved. Cheap-model calls are shared by every run.
 
 Per prompt in bench/data/routing_prompts.jsonl:
   cheap  greedy answer (temperature 0)
@@ -12,6 +14,7 @@ Analysis is separate (bench/routing_eval.py) and instant, so it can be re-run fr
 """
 from __future__ import annotations
 
+import argparse
 import asyncio
 import json
 import time
@@ -23,7 +26,7 @@ from sluice.providers.openai_compat import OpenAICompatProvider
 ROOT = Path(__file__).parent
 PROMPTS = ROOT / "data/routing_prompts.jsonl"
 RUNS = ROOT / "data/routing_runs.jsonl"
-CHEAP, STRONG = "llama3.2:1b", "mistral:latest"
+CHEAP = "llama3.2:1b"
 SAMPLES = 3
 MAX_TOKENS = 256
 
@@ -48,18 +51,18 @@ async def call(p: OpenAICompatProvider, model: str, msgs: list[Message], tempera
             "ms": round((time.perf_counter() - t0) * 1000, 1)}
 
 
-async def main():
+async def main(strong: str):
     items = [json.loads(line) for line in PROMPTS.read_text().splitlines()]
     done = {}
     if RUNS.exists():
         for line in RUNS.read_text().splitlines():
             r = json.loads(line)
-            done[(r["id"], r["role"], r["mode"], r["n"])] = r
+            done[(r["id"], r["model"], r["mode"], r["n"])] = r
     p = OpenAICompatProvider("ollama", "http://localhost:11434/v1", timeout_s=300)
     out = RUNS.open("a")
 
     async def run(item, role, mode, n, model, msgs, temperature, max_tokens):
-        key = (item["id"], role, mode, n)
+        key = (item["id"], model, mode, n)
         if key not in done:
             rec = {"id": item["id"], "role": role, "mode": mode, "n": n,
                    **await call(p, model, msgs, temperature, max_tokens)}
@@ -77,10 +80,12 @@ async def main():
         judge = [Message("user", JUDGE.format(q=item["prompt"], a=greedy["text"]))]
         await run(item, "cheap", "judge", 0, CHEAP, judge, 0.0, 3)
     for item in items:  # then the strong model
-        await run(item, "strong", "greedy", 0, STRONG, messages(item), 0.0, MAX_TOKENS)
+        await run(item, "strong", "greedy", 0, strong, messages(item), 0.0, MAX_TOKENS)
     out.close()
     await p.aclose()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--strong", default="mistral:latest")
+    asyncio.run(main(ap.parse_args().strong))
