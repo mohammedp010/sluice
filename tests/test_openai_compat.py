@@ -52,3 +52,21 @@ async def test_connection_failure_is_provider_error():
         raise httpx.ConnectError("refused")
     with pytest.raises(ProviderError):
         await provider(boom).complete(PARAMS)
+
+
+async def test_malformed_200_is_retryable_provider_error():
+    p = provider(lambda r: httpx.Response(200, text="<html>proxy error</html>"))
+    with pytest.raises(ProviderError) as e:
+        await p.complete(PARAMS)
+    assert e.value.retryable
+
+
+@pytest.mark.parametrize("tail", [
+    'data: {"error": {"message": "model crashed"}}\n\n',  # in-band error event
+    "",                                                     # connection closed without [DONE]
+])
+async def test_stream_errors_are_not_silent_success(tail):
+    body = 'data: {"choices": [{"delta": {"content": "a"}, "finish_reason": null}]}\n\n' + tail
+    p = provider(lambda r: httpx.Response(200, text=body))
+    with pytest.raises(ProviderError):
+        [c async for c in p.stream(PARAMS)]

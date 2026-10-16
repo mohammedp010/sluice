@@ -57,13 +57,17 @@ class OpenAICompatProvider(Provider):
             raise ProviderError(f"{self.name}: {type(e).__name__}: {e}") from e
         if r.status_code != 200:
             raise ProviderError(f"{self.name}: HTTP {r.status_code}: {r.text[:200]}", r.status_code)
-        data = r.json()
-        choice = data["choices"][0]
-        return Completion(
-            content=choice["message"].get("content") or "",
-            finish_reason=choice.get("finish_reason") or "stop",
-            usage=self._usage(data.get("usage")) or Usage(),
-        )
+        try:
+            data = r.json()
+            choice = data["choices"][0]
+            return Completion(
+                content=choice["message"].get("content") or "",
+                finish_reason=choice.get("finish_reason") or "stop",
+                usage=self._usage(data.get("usage")) or Usage(),
+            )
+        except (ValueError, KeyError, IndexError, TypeError, AttributeError) as e:
+            # a 200 we can't read is an upstream failure, so it must be retryable/failover-able
+            raise ProviderError(f"{self.name}: malformed response: {e!r}") from e
 
     async def stream(self, params: ChatParams) -> AsyncIterator[Chunk]:
         try:
@@ -79,7 +83,12 @@ class OpenAICompatProvider(Provider):
                     payload = line[5:].strip()
                     if payload == "[DONE]":
                         return
-                    evt = json.loads(payload)
+                    try:
+                        evt = json.loads(payload)
+                    except ValueError as e:
+                        raise ProviderError(f"{self.name}: malformed SSE event {payload[:80]!r}") from e
+                    if "error" in evt:  # in-band error (Ollama and OpenAI both do this mid-stream)
+                        raise ProviderError(f"{self.name}: upstream error event: {evt['error']}")
                     usage = self._usage(evt.get("usage"))
                     if not evt.get("choices"):
                         if usage:  # trailing usage-only event
@@ -91,6 +100,8 @@ class OpenAICompatProvider(Provider):
                         finish_reason=choice.get("finish_reason"),
                         usage=usage,
                     )
+                # connection closed cleanly but early: without this a truncated answer looks done
+                raise ProviderError(f"{self.name}: stream ended before [DONE]")
         except httpx.HTTPError as e:
             raise ProviderError(f"{self.name}: {type(e).__name__}: {e}") from e
 

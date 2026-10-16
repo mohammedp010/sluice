@@ -20,7 +20,7 @@ from ..config import (
     build_state,
     load_settings,
 )
-from ..limits.estimate import cost_micro_usd, estimate_total
+from ..limits.estimate import cost_micro_usd, estimate_prompt_tokens
 from ..limits.state import SharedState
 from ..providers.base import ChatParams, Chunk, Message, Provider, ProviderError, Usage
 from ..router.executor import AllProvidersFailed, Executor, NonRetryableError, Trail
@@ -65,9 +65,12 @@ def create_app(
 
     @app.middleware("http")
     async def body_size_cap(request: Request, call_next):
-        cl = request.headers.get("content-length")
-        if cl and cl.isdigit() and int(cl) > settings.auth.max_body_bytes:
-            return _error(413, "Request body too large", "request_too_large")
+        if request.method == "POST":
+            cl = request.headers.get("content-length")
+            if cl is None:  # chunked upload: size unknown up front, so the cap can't be enforced
+                return _error(411, "Content-Length required", "length_required")
+            if cl.isdigit() and int(cl) > settings.auth.max_body_bytes:
+                return _error(413, "Request body too large", "request_too_large")
         return await call_next(request)
 
     @app.exception_handler(redis.RedisError)
@@ -123,7 +126,9 @@ def create_app(
 
         # --- 3. rate limits: requests/min, then tokens/min (estimated, reconciled later) ------
         messages = [Message(m.role, m.content) for m in req.messages]
-        est = estimate_total(messages, req.max_tokens, settings.limits.default_completion_estimate)
+        max_tokens = req.max_tokens or req.max_completion_tokens
+        prompt_est = estimate_prompt_tokens(messages)
+        est = prompt_est + (max_tokens or settings.limits.default_completion_estimate)
         tpm_bucket = f"{key.id}:tpm"
         ok, retry = await sh.acquire(f"{key.id}:rpm", key.rpm, key.rpm, 1)
         if not ok:
@@ -137,7 +142,7 @@ def create_app(
 
         # --- 4. do the work ----------------------------------------------------------------
         params = ChatParams(model="", messages=messages, temperature=req.temperature,
-                            max_tokens=req.max_tokens)
+                            max_tokens=max_tokens or settings.limits.default_max_tokens)
         cid = f"chatcmpl-{uuid.uuid4().hex[:24]}"
         created = int(time.time())
 
@@ -155,7 +160,10 @@ def create_app(
         try:
             if not req.stream:
                 c, trail = await ex.complete(route, params)
-                await settle(trail, c.usage)
+                usage = c.usage
+                if not usage.total_tokens:  # upstream reported no usage: bill an estimate, not 0
+                    usage = Usage(prompt_est, len(c.content) // 4)
+                await settle(trail, usage)
                 return JSONResponse(
                     {
                         "id": cid, "object": "chat.completion", "created": created,
@@ -166,9 +174,9 @@ def create_app(
                             "finish_reason": c.finish_reason,
                         }],
                         "usage": {
-                            "prompt_tokens": c.usage.prompt_tokens,
-                            "completion_tokens": c.usage.completion_tokens,
-                            "total_tokens": c.usage.total_tokens,
+                            "prompt_tokens": usage.prompt_tokens,
+                            "completion_tokens": usage.completion_tokens,
+                            "total_tokens": usage.total_tokens,
                         },
                     },
                     headers=_trail_headers(trail),
@@ -184,13 +192,11 @@ def create_app(
             await settle(None, None)
             return _upstream_error(e)
 
-        prompt_est = est - (req.max_tokens or settings.limits.default_completion_estimate)
-
         async def on_done(usage: Usage | None, emitted_chars: int, failed: bool) -> None:
             if failed:
                 ex.report_stream_failure(trail.provider)
             if usage is None:  # no usage reported (error / disconnect): bill what we saw
-                usage = Usage(max(prompt_est, 0), emitted_chars // 4)
+                usage = Usage(prompt_est, emitted_chars // 4)
             await settle(trail, usage)
 
         return StreamingResponse(
@@ -250,9 +256,14 @@ async def _sse(
         err = {"error": {"message": str(e), "type": "upstream_error", "code": "stream_interrupted"}}
         yield f"data: {json.dumps(err)}\n\n"  # no [DONE]: the stream did not complete normally
     finally:
-        # Runs on success, upstream error AND client disconnect. Shielded so a cancelled request
+        # Runs on success, upstream error AND client disconnect. Close the upstream right away
+        # (otherwise it keeps generating until GC), then settle. Shielded so a cancelled request
         # still settles its accounting.
-        await asyncio.shield(on_done(usage, chars, failed))
+        async def finish() -> None:
+            await rest.aclose()
+            await on_done(usage, chars, failed)
+
+        await asyncio.shield(finish())
 
 
 async def _chain(head: list[Chunk], tail: AsyncIterator[Chunk]) -> AsyncIterator[Chunk]:

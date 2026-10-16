@@ -15,5 +15,6 @@ class ChatCompletionRequest(BaseModel):
     stream: bool = False
     temperature: float | None = Field(default=None, ge=0, le=2)
     max_tokens: int | None = Field(default=None, ge=1)
+    max_completion_tokens: int | None = Field(default=None, ge=1)  # newer SDKs send this instead
     # unknown fields (top_p, tools, ...) are accepted and ignored for now
     model_config = {"extra": "ignore"}

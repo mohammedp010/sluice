@@ -70,6 +70,13 @@ class ProviderError(Exception):
         s = self.status
         return s is None or s in (408, 429) or s >= 500
 
+    @property
+    def failover(self) -> bool:
+        """Could a *different* provider succeed? Everything retryable, plus 401/403/404: this
+        provider rejected our credentials or doesn't serve the model. That is the provider's
+        (config) fault, not the client's, so the next target should get a chance."""
+        return self.retryable or self.status in (401, 403, 404)
+
 
 class Provider(ABC):
     name: str

@@ -12,10 +12,6 @@ def estimate_prompt_tokens(messages: list[Message]) -> int:
     return sum(len(m.content) // 4 + 4 for m in messages) + 3  # per-message overhead + priming
 
 
-def estimate_total(messages: list[Message], max_tokens: int | None, default_completion: int) -> int:
-    return estimate_prompt_tokens(messages) + (max_tokens or default_completion)
-
-
 def cost_micro_usd(prompt: int, completion: int, price_in: float, price_out: float) -> int:
     """Prices are USD per million tokens, so tokens * price == micro-USD exactly."""
     return round(prompt * price_in + completion * price_out)

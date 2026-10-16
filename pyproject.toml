@@ -9,6 +9,7 @@ dependencies = [
     "httpx>=0.27",
     "pydantic>=2.7",
     "pyyaml>=6",
+    "redis>=5",
 ]
 
 [project.optional-dependencies]

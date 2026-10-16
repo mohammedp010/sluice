@@ -62,3 +62,13 @@ def test_probe_failure_reopens_and_restarts_cooldown():
     assert b.state is State.OPEN
     clk.t = 20
     assert b.state is State.HALF_OPEN
+
+
+def test_release_frees_half_open_probe():
+    t = [0.0]
+    b = CircuitBreaker(1, 10, clock=lambda: t[0])
+    b.record_failure()
+    t[0] = 11
+    assert b.allow() and not b.allow()
+    b.release()
+    assert b.allow() and b.state is State.HALF_OPEN

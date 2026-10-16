@@ -22,4 +22,10 @@
   and then only for `paid_daily_call_cap` calls/day (shared counter).
 - **Keys:** `sk-sluice-` + 256 random bits; only the SHA-256 is stored; shown once at creation.
 - **Known gaps:** key lookup hits SQLite on every request (fine at this scale, cache later);
-  admin is CLI only; body cap relies on Content-Length (chunked uploads are not capped).
+  admin is CLI only.
+- **Body cap:** POSTs must carry Content-Length (411 otherwise) so the cap can't be bypassed with a
+  chunked upload. The OpenAI SDKs always send it.
+- **No usage reported:** if the upstream omits `usage`, the call is billed from estimates
+  (prompt chars/4 + output chars/4), never as zero tokens.
+- **Output cap:** when the client sets neither `max_tokens` nor `max_completion_tokens`,
+  `limits.default_max_tokens` (1024) is sent upstream (zero-cost rule 6).

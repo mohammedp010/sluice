@@ -102,3 +102,69 @@ async def test_failover_visible_in_headers_and_health():
         for _ in range(3):
             await c.post("/v1/chat/completions", json=BODY)
         assert (await c.get("/v1/sluice/health")).json() == {"bad": "open", "good": "closed"}
+
+
+async def test_client_disconnect_closes_upstream_and_settles():
+    from sluice.api.app import _sse
+    from sluice.providers.base import Chunk
+
+    seen = {}
+
+    async def upstream():
+        try:
+            for i in range(100):
+                yield Chunk(content=f"t{i}")
+        finally:
+            seen["closed"] = True
+
+    async def on_done(usage, chars, failed):
+        seen["done"] = (usage, chars, failed)
+
+    gen = _sse("id", 0, "m", None, upstream(), on_done)
+    await anext(gen), await anext(gen)  # role frame + one content frame
+    await gen.aclose()  # what the server does when the client goes away
+    assert seen == {"closed": True, "done": (None, 2, False)}
+
+
+async def test_max_completion_tokens_and_default_cap():
+    from conftest import client_for, make_app
+
+    from sluice.providers.mock import MockProvider
+
+    class Spy(MockProvider):
+        async def complete(self, params):
+            self.got = params.max_tokens
+            return await super().complete(params)
+
+    spy = Spy("mock")
+    app, raw = make_app(providers={"mock": spy})
+    async with client_for(app, raw) as c:
+        await c.post("/v1/chat/completions", json={**BODY, "max_completion_tokens": 7})
+        assert spy.got == 7
+        await c.post("/v1/chat/completions", json=BODY)
+        assert spy.got == 1024  # zero-cost rule 6: never send an uncapped request upstream
+
+
+async def test_missing_upstream_usage_is_still_billed():
+    from conftest import client_for, make_app
+
+    from sluice.providers.base import Usage
+    from sluice.providers.mock import MockProvider
+
+    class NoUsage(MockProvider):
+        async def complete(self, params):
+            c = await super().complete(params)
+            c.usage = Usage()
+            return c
+
+    app, raw = make_app(providers={"mock": NoUsage("mock", text="x" * 40)})
+    async with client_for(app, raw) as c:
+        u = (await c.post("/v1/chat/completions", json=BODY)).json()["usage"]
+    assert u["prompt_tokens"] > 0 and u["completion_tokens"] == 10
+
+
+async def test_chunked_body_without_length_is_refused(client_factory):
+    async def body():
+        yield json.dumps(BODY).encode()
+    r = await client_factory().post("/v1/chat/completions", content=body())
+    assert r.status_code == 411

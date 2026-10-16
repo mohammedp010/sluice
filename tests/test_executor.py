@@ -117,3 +117,43 @@ async def test_stream_does_not_fail_over_after_first_chunk():
     assert trail.provider == "a"
     with pytest.raises(ProviderError):
         [c async for c in rest]
+
+
+async def test_half_open_probe_freed_after_non_retryable_error():
+    # A 400 during the half-open probe says nothing about health; the probe slot must be freed
+    # or the breaker rejects every request forever.
+    a = MockProvider("a", error_rate=1.0)
+    ex, route = setup(primary=a, retries=0, threshold=1)
+    await ex.complete(route, PARAMS)
+    br = ex.breakers["a"]
+    br._opened_at -= 120  # cooldown elapsed -> half-open
+    a.error_status = 400
+    with pytest.raises(NonRetryableError):
+        await ex.complete(route, PARAMS)
+    a.error_rate = 0.0
+    _, trail = await ex.complete(route, PARAMS)
+    assert trail.provider == "a" and br.state is State.CLOSED
+
+
+async def test_cancelled_call_frees_half_open_probe():
+    import asyncio
+    a = MockProvider("a", error_rate=1.0)
+    ex, route = setup(primary=a, retries=0, threshold=1)
+    await ex.complete(route, PARAMS)
+    ex.breakers["a"]._opened_at -= 120
+    a.error_rate, a.latency_ms = 0.0, 1000
+    task = asyncio.create_task(ex.complete(route, PARAMS))
+    await asyncio.sleep(0.01)
+    task.cancel()  # the client went away mid-call
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert ex.breakers["a"].allow()
+
+
+async def test_upstream_auth_error_fails_over_instead_of_reaching_client():
+    # a 401 from the provider means OUR provider key is bad: try the next target, count it
+    a = MockProvider("a", error_rate=1.0, error_status=401)
+    ex, route = setup(primary=a, retries=3, threshold=1)
+    c, trail = await ex.complete(route, PARAMS)
+    assert c.content == "from b" and [x.provider for x in trail.attempts] == ["a", "b"]
+    assert ex.breakers["a"].state is State.OPEN

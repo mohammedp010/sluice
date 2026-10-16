@@ -77,6 +77,8 @@ class StateConfig(BaseModel):
 
 class LimitsConfig(BaseModel):
     default_completion_estimate: int = 256  # assumed output size when max_tokens is not given
+    # sent upstream when the client sets no limit, so a looping small model can't run forever
+    default_max_tokens: int | None = 1024
     paid_daily_call_cap: int = 50
 
 

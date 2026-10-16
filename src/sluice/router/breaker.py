@@ -56,6 +56,11 @@ class CircuitBreaker:
             return True
         return False
 
+    def release(self) -> None:
+        """The allowed call ended with no verdict on health (cancelled, or the request itself was
+        bad). Free the half-open probe slot, or the breaker would reject everything forever."""
+        self._probe_in_flight = False
+
     def record_success(self) -> None:
         self._state = State.CLOSED
         self._failures = 0

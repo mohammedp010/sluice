@@ -108,14 +108,20 @@ class Executor:
                     trail.attempts.append(Attempt(
                         target.provider, "timeout" if isinstance(e, TimeoutError) else "error",
                         ms, str(err)))
-                    if not err.retryable:
+                    if not err.failover:
                         # The request is bad, not the provider: don't punish the breaker.
+                        breaker.release()
                         raise NonRetryableError(err, trail) from e
                     breaker.record_failure()
                     last = err
+                    if not err.retryable:
+                        break  # e.g. bad upstream key: same target won't change, next one might
                     if n < target.retries:
                         await self._sleep(min(self._backoff(n), max(deadline - time.monotonic(), 0)))
                     continue
+                except BaseException:
+                    breaker.release()  # cancelled (client left) or a bug: no verdict on health
+                    raise
                 breaker.record_success()
                 trail.attempts.append(Attempt(target.provider, "ok", (time.monotonic() - t0) * 1000))
                 trail.provider = target.provider
