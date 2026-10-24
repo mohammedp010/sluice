@@ -115,3 +115,28 @@ async def test_client_disconnect_mid_first_segment_closes_the_upstream():
     await anext(gen)
     await gen.aclose()  # the client went away
     assert closed == {"yes": True}
+
+
+async def test_resume_attempts_and_fallbacks_belong_to_the_request_trace():
+    """The continuation starts while the body streams, after the handler has left the request
+    span's context. Its attempt spans and fallback events must still land on that request."""
+    chain = [{"provider": p, "upstream_model": p, "retries": 0} for p in ("primary", "down", "backup")]
+    settings = Settings(providers={p: {"type": "mock"} for p in ("primary", "down", "backup")},
+                        routes={"m": {"chain": chain, "stream_resume": "prefill"}})
+    app, raw = make_app(settings, {
+        "primary": MockProvider("primary", text=FULL, cut_stream_after=3),
+        "down": MockProvider("down", error_rate=1.0, error_status=503),
+        "backup": MockProvider("backup", text=FULL)})
+    async with client_for(app, raw) as c:
+        r = await c.post(URL, json=BODY)
+    assert stream_text(r)[0] == FULL
+    spans = app.state.spans.get_finished_spans()
+    root = next(s for s in spans if s.name == "chat m")
+    assert {s.context.trace_id for s in spans} == {root.context.trace_id}  # no orphan traces
+    attempts = {s.name: s for s in spans if s.name in ("chat down", "chat backup")}
+    assert set(attempts) == {"chat down", "chat backup"}
+    assert all(s.parent.span_id == root.context.span_id for s in attempts.values())
+    events = [(e.name, dict(e.attributes)) for e in root.events]
+    assert ("sluice.fallback", {"sluice.provider": "down", "error.type": "503",
+                                "sluice.next_provider": "backup"}) in events
+    assert [n for n, _ in events].count("sluice.stream_resume") == 1

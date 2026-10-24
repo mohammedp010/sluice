@@ -46,6 +46,11 @@ class CircuitBreaker:
             self._probe_in_flight = False
         return self._state
 
+    @property
+    def failures(self) -> int:
+        """Consecutive failures counted toward the threshold (read-only, for the admin API)."""
+        return self._failures
+
     def allow(self) -> bool:
         """Ask permission to send a request. In HALF_OPEN only one probe is let through."""
         st = self.state

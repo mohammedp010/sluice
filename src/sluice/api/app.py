@@ -49,6 +49,8 @@ from ..router.resume import ResumableStream
 from ..telemetry import semconv as sc
 from ..telemetry.ledger import UsageLedger
 from ..telemetry.otel import Metrics, Telemetry, build_telemetry
+from ..telemetry.recent import RecentTraces
+from .admin import admin_router
 from .schemas import ChatCompletionRequest
 
 DEFAULT_POLICY = "policies/routes.yaml"
@@ -146,6 +148,11 @@ def create_app(
         tracer=tracer)
     metrics = Metrics(
         tel.meter(), lambda: {n: b.state.value for n, b in app.state.executor.breakers.items()})
+
+    if settings.admin.enabled:  # read-only API for the UI; also keeps the last N traces
+        recent = RecentTraces(settings.admin.recent_traces)
+        tel.tracer_provider.add_span_processor(recent)
+        app.include_router(admin_router(recent))
 
     @app.middleware("http")
     async def body_size_cap(request: Request, call_next):
@@ -409,7 +416,7 @@ def create_app(
                 "sluice.resume.prefix_chars": chars, "sluice.resume.strategy": route.stream_resume})
             metrics.stream_resumes.add(1, {"sluice.provider": provider})
 
-        rs = ResumableStream(ex, sroute, params, route.stream_resume, resumed)
+        rs = ResumableStream(ex, sroute, params, route.stream_resume, resumed, span=log.span)
 
         async def on_done(r: StreamResult) -> None:
             try:

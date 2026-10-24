@@ -1,6 +1,6 @@
 # Sluice
 
-An OpenAI-compatible LLM gateway, built phase by phase as a learning project (`PLAN.md`). It
+An OpenAI-compatible LLM gateway, built phase by phase as a learning project. It
 sits between applications and model providers and decides how much traffic flows, where it
 goes, and when to shut it off. It handles keys, rate limits and budgets, retries, fallback and
 circuit breaking, tracing and cost attribution, a semantic cache, cheap-first routing, stream
@@ -81,11 +81,19 @@ Two replicas + Redis + Jaeger: `docker compose up` (policy `policies/compose.yam
 | Stream resume | `stream_resume: prefill` on a route (backup must honour prefill) | ADR 0008 |
 | MCP proxy | `mcp.servers` in the policy; keys get `--tools "server__tool*"` grants; `python -m sluice.report --mcp` | ADR 0009 |
 
+## Workbench UI
+
+`UI/` is a Vite + React app for seeing all of the above. It has a lab that sends real requests and
+replays each one through the pipeline from its trace, plus the policy, ledger, keys, MCP audit,
+every benchmark result, the ADRs and the commit history. It reads a read-only admin API
+(`/v1/sluice/admin/*`, off by default; `admin.enabled` in the policy). `policies/lab.yaml` turns
+the API on and adds mock routes that fail on purpose. Setup is in [UI/README.md](UI/README.md).
+
 ## Tests and benchmarks
 
 ```bash
 redis-server --port 6399 --save "" &      # optional: the Redis tests skip without it
-.venv/bin/pytest                          # 135 tests, ~4 s
+.venv/bin/pytest                          # 142 tests, ~4 s
 ```
 
 The LiteLLM comparison needs LiteLLM in its own environment (pinned, Python 3.12) and uvloop:
@@ -101,13 +109,15 @@ python3.12 -m venv bench/.venv-litellm && bench/.venv-litellm/bin/pip install "l
 ```
 src/sluice/   api/ (FastAPI app, SSE)  providers/ (mock, OpenAI-compatible)  router/ (executor,
               breaker)  auth/  limits/ (Redis Lua buckets)  telemetry/ (OTel, ledger)  cache/
-              quality/  mcp/ (endpoint, upstreams, audit)  admin.py  report.py
-policies/     routes.yaml (local), compose.yaml (docker)
+              quality/  mcp/ (endpoint, upstreams, audit)  api/admin.py (read-only API for the UI)
+              admin.py  report.py
+policies/     routes.yaml (local), compose.yaml (docker), lab.yaml (the UI's lab)
+UI/           workbench UI (Vite + React); see UI/README.md
 bench/        load generator, mock upstream, every experiment; results/ holds their output
 docs/         decisions/ (ADRs 0001-0009), learning/ (one note per phase, with questions)
 ```
 
-## Definition of done (PLAN.md §7)
+## Definition of done
 
 - [x] Failover demonstrated under injected failure, with numbers in `bench/results/`
 - [x] Streaming failure behaviour documented and tested (ADR 0001)

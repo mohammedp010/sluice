@@ -94,6 +94,14 @@ class UsageLedger:
                 (since or "",)).fetchall()
         return [tuple(r) for r in rows]
 
+    def recent(self, limit: int = 50) -> list[dict]:
+        """Newest first, every column."""
+        self.flush()
+        with self._lock:
+            cur = self._db.execute("SELECT * FROM usage ORDER BY id DESC LIMIT ?", (limit,))
+            names = [d[0] for d in cur.description]
+            return [dict(zip(names, r)) for r in cur.fetchall()]
+
     def last(self) -> dict | None:
         return self._one("SELECT * FROM usage ORDER BY id DESC LIMIT 1", ())
 

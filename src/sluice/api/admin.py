@@ -1,0 +1,118 @@
+"""Read-only admin API for the UI (`UI/`). Enabled by `admin.enabled` in the policy.
+
+Everything here reads state the gateway already keeps: the loaded policy, breaker states, the
+recent traces (telemetry/recent.py), the usage ledger, the key store and the MCP audit log.
+Nothing writes, and nothing changes how a request is handled. Key hashes are never returned,
+only the 4-character hint the admin CLI shows.
+
+No authentication: it is meant for a gateway on localhost. That is why it is off by default
+(see AdminConfig) and off in the docker-compose policy.
+"""
+from __future__ import annotations
+
+import os
+
+from fastapi import APIRouter, HTTPException, Query, Request
+
+from ..config import Route
+from ..telemetry.ledger import GROUPS
+from ..telemetry.recent import RecentTraces
+
+SUMMARY_FIELDS = ("group", "requests", "errors", "fallbacks", "prompt_tokens",
+                  "completion_tokens", "cost_usd")
+
+
+def _route(r: Route) -> dict:
+    d = r.model_dump(exclude={"escalate"})
+    d["escalate"] = _route(r.escalate) if r.escalate else None
+    return d
+
+
+def admin_router(recent: RecentTraces) -> APIRouter:
+    api = APIRouter(prefix="/v1/sluice/admin")
+
+    @api.get("/overview")
+    async def overview(request: Request):
+        st = request.app.state
+        s = st.settings
+        breakers = st.executor.breakers
+        providers = {}
+        for name, c in s.providers.items():
+            b = breakers.get(name)
+            providers[name] = {
+                **c.model_dump(exclude={"api_key_env"}),
+                "has_api_key": bool(c.api_key_env and os.environ.get(c.api_key_env)),
+                "breaker": {"state": b.state.value, "failures": b.failures,
+                            "threshold": b.failure_threshold, "cooldown_s": b.cooldown_s}
+                if b else None,
+            }
+        return {
+            "routes": {m: _route(r) for m, r in s.routes.items()},
+            "providers": providers,
+            "auth": {"enabled": s.auth.enabled, "max_body_bytes": s.auth.max_body_bytes},
+            "state": {"backend": s.state.backend},
+            "limits": s.limits.model_dump(),
+            "paid_allowed": os.environ.get("SLUICE_ALLOW_PAID") == "1",
+            "cache": s.cache.model_dump(exclude={"embed_base_url"}),
+            "telemetry": s.telemetry.model_dump(exclude={"otlp_endpoint"}),
+            "mcp": {"servers": {n: ("stdio" if m.command else "http")
+                                for n, m in s.mcp.servers.items()},
+                    "allowed_origins": s.mcp.allowed_origins},
+            "recent_traces": recent.max_traces,
+        }
+
+    @api.get("/traces")
+    async def traces(limit: int = Query(50, ge=1, le=500)):
+        return recent.roots(limit)
+
+    @api.get("/traces/{trace_id}")
+    async def trace(trace_id: str, request: Request):
+        spans = recent.get(trace_id)
+        ledger = request.app.state.ledger
+        row = ledger.by_trace(trace_id) if ledger else None
+        if spans is None and row is None:
+            raise HTTPException(404, "trace not held (only the most recent are kept in memory)")
+        return {"trace_id": trace_id, "spans": spans or [], "ledger": row}
+
+    @api.get("/ledger")
+    async def ledger_rows(request: Request, limit: int = Query(100, ge=1, le=1000)):
+        ledger = request.app.state.ledger
+        return ledger.recent(limit) if ledger else []
+
+    @api.get("/ledger/summary")
+    async def ledger_summary(request: Request, by: str = "team", since: str | None = None):
+        if by not in GROUPS:
+            raise HTTPException(400, f"by must be one of {sorted(GROUPS)}")
+        ledger = request.app.state.ledger
+        rows = ledger.summary(by, since) if ledger else []
+        return [dict(zip(SUMMARY_FIELDS, r)) for r in rows]
+
+    @api.get("/keys")
+    async def keys(request: Request):
+        st = request.app.state
+        if st.keys is None:
+            return []
+        out = []
+        for k, hint in st.keys.list():
+            day, month = await st.shared.spend(k.id)
+            out.append({
+                "id": k.id, "name": k.name, "team": k.team, "app": k.app, "hint": hint,
+                "allowed_models": k.allowed_models, "allowed_tools": k.allowed_tools,
+                "rpm": k.rpm, "tpm": k.tpm, "daily_budget_usd": k.daily_budget_usd,
+                "monthly_budget_usd": k.monthly_budget_usd, "revoked": k.revoked,
+                "spend_today_usd": day / 1e6, "spend_month_usd": month / 1e6,
+            })
+        return out
+
+    @api.get("/mcp")
+    async def mcp(request: Request, limit: int = Query(100, ge=1, le=1000)):
+        audit = request.app.state.mcp.audit
+        return {
+            "servers": {n: ("stdio" if m.command else "http")
+                        for n, m in request.app.state.settings.mcp.servers.items()},
+            "summary": [dict(zip(("key", "tool", "outcome", "calls"), r))
+                        for r in audit.summary()],
+            "audit": audit.rows(limit),
+        }
+
+    return api

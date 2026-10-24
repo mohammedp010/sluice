@@ -140,6 +140,14 @@ class McpConfig(BaseModel):
     allowed_origins: list[str] = Field(default_factory=list)
 
 
+class AdminConfig(BaseModel):
+    """Read-only admin API under /v1/sluice/admin (policy, recent traces, ledger, keys without
+    secrets, MCP audit) for the UI. Off by default: it shows who spent what, unauthenticated."""
+
+    enabled: bool = False
+    recent_traces: int = Field(default=200, ge=1)  # traces held in memory for the UI
+
+
 class Settings(BaseModel):
     auth: AuthConfig = Field(default_factory=AuthConfig)
     telemetry: TelemetryConfig = Field(default_factory=TelemetryConfig)
@@ -147,6 +155,7 @@ class Settings(BaseModel):
     mcp: McpConfig = Field(default_factory=McpConfig)
     state: StateConfig = Field(default_factory=StateConfig)
     limits: LimitsConfig = Field(default_factory=LimitsConfig)
+    admin: AdminConfig = Field(default_factory=AdminConfig)
     providers: dict[str, ProviderConfig]
     routes: dict[str, Route] = Field(default_factory=dict)  # public model name -> target
 

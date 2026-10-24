@@ -12,9 +12,13 @@ that overlap is cut. bench/stream_resume_eval.py measures how often each of thes
 """
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass, field
+
+from opentelemetry import trace
+from opentelemetry.trace import Span
 
 from ..config import Route, Target
 from ..providers.base import ChatParams, Chunk, Message, ProviderError
@@ -62,6 +66,10 @@ class ResumableStream:
     params: ChatParams
     strategy: str  # "off" | "prefill" | "instruct"
     on_resume: Callable[[str, int, str], None] = lambda provider, chars, nxt: None
+    # The request span. The continuation starts while the body streams, after the handler has
+    # left this span's context, so it is made current again for the new attempt: otherwise the
+    # attempt spans start a trace of their own and fallback events go nowhere.
+    span: Span | None = None
     segments: list[Segment] = field(default_factory=list)
     trimmed: int = 0  # chars of repeated text cut at the seam
 
@@ -86,10 +94,13 @@ class ResumableStream:
         finally:
             await upstream.aclose()  # also on client disconnect: stop the provider generating
         prefix = seg.text
+        in_request = (trace.use_span(self.span, end_on_exit=False) if self.span
+                      else contextlib.nullcontext())
         try:
-            (first2, up2), trail2 = await self.ex.stream(
-                self.route, continuation_params(self.params, prefix, self.strategy),
-                skip=frozenset({trail.provider}))
+            with in_request:  # no yield inside: the context is restored before we stream again
+                (first2, up2), trail2 = await self.ex.stream(
+                    self.route, continuation_params(self.params, prefix, self.strategy),
+                    skip=frozenset({trail.provider}))
         except (AllProvidersFailed, NonRetryableError):
             raise error from None  # nowhere to resume: the original error stands
         self.on_resume(trail.provider, len(prefix), trail2.provider or "")

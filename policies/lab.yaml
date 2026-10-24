@@ -1,0 +1,114 @@
+# The UI's lab policy: routes.yaml's local routes plus mock routes that fail on purpose, so the
+# workbench can show retries, failover, an opening breaker, a cut stream and an escalation for
+# $0. Run:  SLUICE_POLICY=policies/lab.yaml .venv/bin/uvicorn sluice.api.app:app_factory --factory
+auth:
+  enabled: true
+  db_path: sluice.db
+state:
+  backend: memory
+telemetry:
+  traces: none
+  prometheus: true
+  ledger: true
+admin:
+  enabled: true               # read-only /v1/sluice/admin/* for the UI (localhost only)
+  recent_traces: 200
+cache:
+  enabled: true               # needs: ollama pull nomic-embed-text (fails open without it)
+  embed_base_url: http://localhost:11434/v1
+  embed_model: nomic-embed-text
+  embed_prefix: "clustering: "
+  threshold: 0.895            # from bench/results/cache-eval.md
+  guard_max_diff: 2
+  ttl_s: 3600
+limits:
+  default_completion_estimate: 256
+  paid_daily_call_cap: 50
+mcp:
+  servers: {}
+  allowed_origins: []
+
+providers:
+  mock:
+    type: mock
+    tokens_per_sec: 50
+  primary-down:               # every call fails with 503: retried, then abandoned
+    type: mock
+    error_rate: 1.0
+    error_status: 503
+    breaker_failures: 3
+    breaker_cooldown_s: 15
+  flaky:                      # 40% of calls fail
+    type: mock
+    error_rate: 0.4
+    error_status: 500
+    tokens_per_sec: 50
+  cutter:                     # streams die after 12 tokens
+    type: mock
+    tokens_per_sec: 25
+    cut_stream_after: 12
+    text: "A sluice is a gate that controls how much water flows through a channel, where it goes next, and when to shut it off entirely."
+  backup:
+    type: mock
+    tokens_per_sec: 40
+    text: "A sluice is a gate that controls how much water flows through a channel, where it goes next, and when to shut it off entirely."
+  silent:                     # answers with nothing: fails the "empty" quality check
+    type: mock
+    text: ""
+  ollama:
+    type: openai_compat
+    base_url: http://localhost:11434/v1
+    timeout_s: 120
+
+routes:
+  mock-model:
+    cache: true
+    provider: mock
+    upstream_model: mock-1
+    price_in_per_mtok: 0.50   # fake prices (USD per million tokens): budgets cost nothing
+    price_out_per_mtok: 1.50
+  lab-failover:               # primary always 503s: 2 attempts, then the backup serves
+    chain:
+      - {provider: primary-down, upstream_model: big-1, retries: 1, timeout_s: 2,
+         price_in_per_mtok: 3.00, price_out_per_mtok: 15.00}
+      - {provider: backup, upstream_model: small-1, retries: 0,
+         price_in_per_mtok: 0.15, price_out_per_mtok: 0.60}
+  lab-flaky:
+    chain:
+      - {provider: flaky, upstream_model: flaky-1, retries: 1}
+      - {provider: backup, upstream_model: small-1, retries: 0}
+  lab-stream-cut:             # stream the answer: cut after 12 tokens, resumed on the backup
+    stream_resume: prefill
+    chain:
+      - {provider: cutter, upstream_model: cut-1, retries: 0}
+      - {provider: backup, upstream_model: small-1, retries: 0}
+  lab-stream-cut-off:         # same cut, resume off: terminal error event, no [DONE] (ADR 0001)
+    chain:
+      - {provider: cutter, upstream_model: cut-1, retries: 0}
+      - {provider: backup, upstream_model: small-1, retries: 0}
+  lab-escalate:               # cheap answer is empty -> re-asked on the strong route
+    escalate_on: [empty, truncated, refusal, invalid_json, repetition]
+    chain:
+      - {provider: silent, upstream_model: tiny-1, retries: 0,
+         price_in_per_mtok: 0.15, price_out_per_mtok: 0.60}
+    escalate:
+      chain:
+        - {provider: backup, upstream_model: strong-1, retries: 0,
+           price_in_per_mtok: 2.50, price_out_per_mtok: 10.00}
+  local-small:
+    deadline_s: 120
+    cache: false              # 9% test false hits (cache-eval.md)
+    chain:
+      - {provider: ollama, upstream_model: "llama3.2:1b", timeout_s: 60, retries: 1}
+      - {provider: mock, upstream_model: mock-1, retries: 0}
+  auto:
+    deadline_s: 60
+    chain:
+      - {provider: ollama, upstream_model: "llama3.2:1b", timeout_s: 60, retries: 0,
+         price_in_per_mtok: 0.15, price_out_per_mtok: 0.60}
+    escalate_on: [empty, truncated, refusal, invalid_json, repetition]
+    escalate:
+      deadline_s: 180
+      chain:
+        - {provider: ollama, upstream_model: "mistral", timeout_s: 180, retries: 0,
+           price_in_per_mtok: 2.50, price_out_per_mtok: 10.00}
