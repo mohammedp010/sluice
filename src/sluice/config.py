@@ -81,6 +81,21 @@ class AuthConfig(BaseModel):
     enabled: bool = True
     db_path: str = "sluice.db"
     max_body_bytes: int = 1_000_000
+    # Lifetime of keys made by `sluice.admin create-key` without --ttl, e.g. "90d". None: never
+    # expire. (ADR 0011)
+    key_ttl: str | None = None
+    # Proxies whose X-Forwarded-For is believed when finding the caller's IP (key CIDR binding,
+    # admin loopback check). Empty: the TCP peer is the caller.
+    trusted_proxies: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _check(self):
+        from .auth.keys import parse_duration, parse_networks
+
+        if self.key_ttl is not None:
+            parse_duration(self.key_ttl)
+        parse_networks(self.trusted_proxies)
+        return self
 
 
 class StateConfig(BaseModel):
@@ -144,13 +159,21 @@ class McpConfig(BaseModel):
     # Browsers send Origin; MCP's spec requires checking it (DNS rebinding). CLI clients don't
     # send one. Any Origin not listed here is refused.
     allowed_origins: list[str] = Field(default_factory=list)
+    # Tool pinning (ADR 0011). auto_first: trust a tool on first sight unless the lint flags
+    # it; manual: every new tool waits for `sluice.admin tools approve`. A changed definition
+    # is quarantined either way, found at the next refresh (every tools_ttl_s).
+    pin_mode: Literal["auto_first", "manual"] = "auto_first"
+    tools_ttl_s: float = Field(default=60.0, gt=0)
+    lint_max_description: int = Field(default=1024, ge=1)
 
 
 class AdminConfig(BaseModel):
     """Read-only admin API under /v1/sluice/admin (policy, recent traces, ledger, keys without
-    secrets, MCP audit) for the UI. Off by default: it shows who spent what, unauthenticated."""
+    secrets, MCP audit) for the UI. Off by default: it shows who spent what. Loopback-only
+    unless the env var `token_env` holds an admin token (32+ chars); then it needs that token."""
 
     enabled: bool = False
+    token_env: str = "SLUICE_ADMIN_TOKEN"  # name of an env var; never put the token in YAML
     recent_traces: int = Field(default=200, ge=1)  # traces held in memory for the UI
 
 

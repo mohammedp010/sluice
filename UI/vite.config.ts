@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 
 const GATEWAY = process.env.SLUICE_URL ?? "http://localhost:8000";
+const ADMIN_TOKEN = process.env.SLUICE_ADMIN_TOKEN; // only needed if the gateway has one
 const REPO = resolve(__dirname, "..");
 
 /** `virtual:git-log`: the repo's commits, read at build/dev time (the browser can't run git). */
@@ -51,8 +52,16 @@ export default defineConfig({
   server: {
     port: 5173,
     fs: { allow: [REPO] }, // bench/results and docs/ are imported as raw text
-    proxy: Object.fromEntries(
-      ["/v1", "/mcp", "/metrics", "/healthz"].map((p) => [p, { target: GATEWAY, changeOrigin: true }]),
-    ),
+    proxy: {
+      // The admin API takes its own token, never a virtual key (ADR 0010). The dev server adds
+      // it here, server side, so it never reaches the browser. First match wins: keep it first.
+      "/v1/sluice/admin": {
+        target: GATEWAY, changeOrigin: true,
+        headers: ADMIN_TOKEN ? { Authorization: `Bearer ${ADMIN_TOKEN}` } : {},
+      },
+      ...Object.fromEntries(
+        ["/v1", "/mcp", "/metrics", "/healthz"].map((p) => [p, { target: GATEWAY, changeOrigin: true }]),
+      ),
+    },
   },
 });

@@ -24,6 +24,7 @@ from mcp.client.streamable_http import streamable_http_client
 from mcp.types import CallToolResult, Tool
 
 from ..config import McpServerConfig
+from .pins import ToolPins, definition
 
 SEP = "__"  # public tool name = "<server>__<tool>"
 
@@ -34,8 +35,9 @@ class UpstreamDown(Exception):
 
 class Upstreams:
     def __init__(self, servers: dict[str, McpServerConfig], tools_ttl_s: float = 60.0,
-                 retry_s: float = 10.0):
+                 retry_s: float = 10.0, pins: ToolPins | None = None):
         self.cfg = servers
+        self.pins = pins
         self.tools_ttl_s = tools_ttl_s
         self.retry_s = retry_s
         self._sessions: dict[str, ClientSession] = {}
@@ -91,18 +93,26 @@ class Upstreams:
             return self._sessions[name]
 
     async def tools(self) -> dict[str, Tool]:
-        """Public name -> tool, from every server that is up. Cached for `tools_ttl_s`."""
+        """Public name -> tool, from every server that is up. Cached for `tools_ttl_s`.
+        Each refresh is checked against the pins (pins.py); filtering is the caller's job."""
         out: dict[str, Tool] = {}
+        refreshed = []
         for name in self.cfg:
             if time.monotonic() - self._tools_at.get(name, -1e9) > self.tools_ttl_s:
                 try:
                     s = await self.session(name)
                     self._tools[name] = (await s.list_tools()).tools
                     self._tools_at[name] = time.monotonic()
+                    refreshed.append(name)
                 except Exception:  # noqa: BLE001 -- one server down mustn't hide the others
                     self._tools.pop(name, None)
             for t in self._tools.get(name, []):
                 out[f"{name}{SEP}{t.name}"] = t
+        if self.pins:  # after the loop, so the lint knows every server's tool names
+            for name in refreshed:
+                others = {t.name for n, ts in self._tools.items() if n != name for t in ts}
+                for t in self._tools[name]:
+                    self.pins.observe(f"{name}{SEP}{t.name}", definition(t), others)
         return out
 
     async def call(self, public: str, args: dict) -> CallToolResult:

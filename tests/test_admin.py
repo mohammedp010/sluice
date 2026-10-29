@@ -1,11 +1,15 @@
 """Read-only admin API for the UI: off by default, never returns key hashes, and joins a
-request's spans to its ledger row by trace id."""
+request's spans to its ledger row by trace id. Loopback-only without an admin token; with one,
+it needs that token and never accepts a virtual key."""
+import httpx
+import pytest
 from conftest import ROUTE, client_for, make_app
 
 from sluice.config import Settings
 from sluice.providers.mock import MockProvider
 
 BODY = {"model": "m", "messages": [{"role": "user", "content": "hi"}], "max_tokens": 5}
+ADMIN_TOKEN = "adm-" + "x" * 40
 
 
 def admin_app(**key_kw):
@@ -88,6 +92,44 @@ async def test_mcp_audit_is_listed():
                                    "params": {"name": "demo__add", "arguments": {}}})
         m = (await c.get("/v1/sluice/admin/mcp")).json()
     assert m["audit"][0]["tool"] == "demo__add" and m["audit"][0]["outcome"] == "unknown"
+
+
+def remote_client(app, token=None) -> httpx.AsyncClient:
+    """A client that is not on loopback (the in-process default is 127.0.0.1)."""
+    return httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app, client=("203.0.113.7", 40000)),
+        base_url="http://test", headers={"Authorization": f"Bearer {token}"} if token else {})
+
+
+async def test_without_a_token_only_loopback_gets_in_and_a_virtual_key_never_does():
+    app, raw = admin_app()
+    async with client_for(app, raw) as local:
+        assert (await local.get("/v1/sluice/admin/overview")).status_code == 200
+    async with remote_client(app, raw) as remote:  # a valid virtual key, from elsewhere
+        r = await remote.get("/v1/sluice/admin/keys")
+    assert r.status_code == 403 and "SLUICE_ADMIN_TOKEN" in r.json()["detail"]
+
+
+async def test_with_a_token_every_caller_needs_it(monkeypatch):
+    monkeypatch.setenv("SLUICE_ADMIN_TOKEN", ADMIN_TOKEN)
+    app, raw = admin_app()
+    async with client_for(app, raw) as local:  # loopback, virtual key: not enough any more
+        assert (await local.get("/v1/sluice/admin/keys")).status_code == 401
+    async with remote_client(app) as anon:
+        r = await anon.get("/v1/sluice/admin/keys")
+        assert r.status_code == 401 and r.headers["www-authenticate"] == "Bearer"
+    async with remote_client(app, ADMIN_TOKEN[:-1] + "y") as wrong:
+        assert (await wrong.get("/v1/sluice/admin/keys")).status_code == 401
+    async with remote_client(app, ADMIN_TOKEN) as admin:
+        assert (await admin.get("/v1/sluice/admin/keys")).status_code == 200
+    async with client_for(app, raw) as c:  # the token doesn't leak into the key-checked API
+        assert (await c.post("/v1/chat/completions", json=BODY)).status_code == 200
+
+
+def test_a_short_admin_token_is_refused_at_startup(monkeypatch):
+    monkeypatch.setenv("SLUICE_ADMIN_TOKEN", "hunter2")
+    with pytest.raises(ValueError, match="at least 32"):
+        admin_app()
 
 
 def test_lab_policy_loads_with_admin_on():

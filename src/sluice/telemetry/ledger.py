@@ -62,7 +62,7 @@ class UsageLedger:
             try:
                 with self._lock, self._db:
                     self._db.executemany(
-                        f"INSERT INTO usage ({','.join(COLUMNS)}) "
+                        f"INSERT INTO usage ({','.join(COLUMNS)}) "  # noqa: S608 -- constants
                         f"VALUES ({','.join('?' * len(COLUMNS))})", rows)
             except sqlite3.Error:
                 with self._buf_lock:  # e.g. the other replica held the lock too long: retry
@@ -90,7 +90,7 @@ class UsageLedger:
                 f"""SELECT COALESCE(NULLIF({col}, ''), '-') AS g, COUNT(*),
                            SUM(status >= 400), SUM(fallbacks > 0),
                            SUM(prompt_tokens), SUM(completion_tokens), SUM(cost_micro_usd) / 1e6
-                    FROM usage WHERE ts >= ? GROUP BY g ORDER BY 7 DESC, 1""",
+                    FROM usage WHERE ts >= ? GROUP BY g ORDER BY 7 DESC, 1""",  # noqa: S608
                 (since or "",)).fetchall()
         return [tuple(r) for r in rows]
 

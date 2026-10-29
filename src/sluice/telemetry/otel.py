@@ -99,6 +99,9 @@ class Metrics:
             "sluice.stream_resumes", "{resume}", "Streams continued on another provider")
         self.fallbacks = meter.create_counter(
             "sluice.fallbacks", "{fallback}", "Times a target was abandoned for the next one")
+        self.auth_rejections = meter.create_counter(
+            "sluice.auth.rejections", "{request}",
+            "Requests refused at the key check, by reason (missing, unknown, expired, ...)")
 
         def observe(_: CallbackOptions):
             for name, state in breaker_states().items():

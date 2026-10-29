@@ -2,6 +2,7 @@
 auth:
   enabled: true
   db_path: /data/sluice.db
+  key_ttl: 90d                 # keys made without --ttl expire (ADR 0011)
 state:
   backend: redis
   redis_url: redis://redis:6379/0

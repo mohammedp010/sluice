@@ -15,6 +15,19 @@ async def test_health_and_models(client_factory):
     assert [m["id"] for m in (await c.get("/v1/models")).json()["data"]] == ["m"]
 
 
+async def test_models_need_a_key_and_list_only_what_it_may_use():
+    from conftest import ROUTE, client_for, make_app
+
+    from sluice.config import Settings
+
+    settings = Settings(providers={"mock": {"type": "mock"}}, routes={"m": ROUTE, "big": ROUTE})
+    app, raw = make_app(settings, key_kw={"allowed_models": ["m"]})
+    async with client_for(app, raw) as c:
+        assert [m["id"] for m in (await c.get("/v1/models")).json()["data"]] == ["m"]
+        c.headers.pop("Authorization")
+        assert (await c.get("/v1/models")).status_code == 401
+
+
 async def test_non_streaming(client_factory):
     r = await client_factory().post("/v1/chat/completions", json=BODY)
     d = r.json()

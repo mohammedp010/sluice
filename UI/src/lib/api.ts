@@ -127,6 +127,12 @@ export interface KeyInfo {
   daily_budget_usd: number | null;
   monthly_budget_usd: number | null;
   revoked: boolean;
+  status: "active" | "suspended" | "revoked";
+  suspended_reason: string | null;
+  expires_at: string | null; // UTC, "YYYY-MM-DD HH:MM:SS"
+  allowed_cidrs: string[];
+  lineage: number;
+  created_at: string;
   spend_today_usd: number;
   spend_month_usd: number;
 }
@@ -150,6 +156,19 @@ export interface McpInfo {
   servers: Record<string, "stdio" | "http">;
   summary: { key: string; tool: string; outcome: string; calls: number }[];
   audit: AuditRow[];
+  pins: PinRow[];
+}
+
+/** A tool's pin (ADR 0011): the trusted definition's hash against the one seen last. */
+export interface PinRow {
+  tool: string;
+  status: "approved" | "pending" | "quarantined";
+  pinned_sha256: string;
+  seen_sha256: string;
+  flags: string; // JSON list of lint findings
+  first_seen: string;
+  changed_at: string | null;
+  approved_at: string | null;
 }
 
 /** Why a read failed, in terms the UI can explain. */

@@ -1,5 +1,5 @@
 import { KeyRound } from "lucide-react";
-import { api } from "../lib/api";
+import { api, type KeyInfo } from "../lib/api";
 import { usd } from "../lib/format";
 import { ApiProblem, Empty, SkeletonRows, usePoll } from "../components/state";
 
@@ -14,6 +14,17 @@ function Budget({ spent, cap }: { spent: number; cap: number | null }) {
       </div>
     </div>
   );
+}
+
+function expired(k: KeyInfo): boolean {
+  return k.expires_at !== null && new Date(k.expires_at.replace(" ", "T") + "Z") <= new Date();
+}
+
+function StatePill({ k }: { k: KeyInfo }) {
+  if (k.status === "revoked") return <> · <span className="pill bad">revoked</span></>;
+  if (k.status === "suspended") return <> · <span className="pill warn" title={k.suspended_reason ?? undefined}>suspended</span></>;
+  if (expired(k)) return <> · <span className="pill bad">expired</span></>;
+  return null;
 }
 
 export default function Keys() {
@@ -35,13 +46,13 @@ export default function Keys() {
               </Empty>
             ) : (
               <table className="tbl">
-                <thead><tr><th>key</th><th>team · app</th><th>models</th><th className="num">rpm</th><th className="num">tpm</th><th>today</th><th>this month</th><th>MCP tools</th></tr></thead>
+                <thead><tr><th>key</th><th>team · app</th><th>models</th><th className="num">rpm</th><th className="num">tpm</th><th>today</th><th>this month</th><th>MCP tools</th><th>expires · networks</th></tr></thead>
                 <tbody>
                   {keys.data.map((k) => (
-                    <tr key={k.id} style={k.revoked ? { opacity: 0.55 } : undefined}>
+                    <tr key={k.id} style={k.status !== "active" || expired(k) ? { opacity: 0.55 } : undefined}>
                       <td>
                         <div className="mono" style={{ fontWeight: 600 }}>{k.name}</div>
-                        <div className="mono" style={{ color: "var(--ink-2)" }}>#{k.id} · …{k.hint}{k.revoked && <> · <span className="pill bad">revoked</span></>}</div>
+                        <div className="mono" style={{ color: "var(--ink-2)" }}>#{k.id} · …{k.hint}{k.lineage !== k.id && <> · rotated from #{k.lineage}</>}<StatePill k={k} /></div>
                       </td>
                       <td className="mono">{k.team || "—"} · {k.app || "—"}</td>
                       <td className="mono">{k.allowed_models.join(", ")}</td>
@@ -50,6 +61,7 @@ export default function Keys() {
                       <td><Budget spent={k.spend_today_usd} cap={k.daily_budget_usd} /></td>
                       <td><Budget spent={k.spend_month_usd} cap={k.monthly_budget_usd} /></td>
                       <td className="mono">{k.allowed_tools.length ? k.allowed_tools.join(", ") : <span style={{ color: "var(--ink-3)" }}>none (deny by default)</span>}</td>
+                      <td className="mono">{k.expires_at ? `${k.expires_at} UTC` : "never"} · {k.allowed_cidrs.length ? k.allowed_cidrs.join(", ") : "any"}</td>
                     </tr>
                   ))}
                 </tbody>
