@@ -53,6 +53,7 @@ other hardware.
 | Bug found by benchmarking | cancelled httpx calls leaked pool slots (22 → 100, then dead); fixed: 0% → 100% success after an overload | `bench/httpx_pool_leak.py` → [httpx-pool-leak.md](bench/results/httpx-pool-leak.md), ADR 0007 |
 | Top profiling hotspot | per-request SQLite commit on the event loop, ~19% of CPU; now batched off the loop | `bench/profile_sluice.py` → [before](bench/results/profile-before-flat.txt) / [after](bench/results/profile-after-flat.txt) |
 | Stream resume after a mid-answer failure | prefill: 30/30 clean (same model), 29/30 (other model); silent restart: 0/30 | `bench/stream_resume_eval.py` → [stream-resume.md](bench/results/stream-resume.md) |
+| MCP tool description lint (ADR 0011) | 1 of 63 real tool descriptions held for review; 19 of 32 poisoned strings flagged, 0 of 9 innocently worded ones | `bench/tool_lint_eval.py` → [tool-lint-eval.md](bench/results/tool-lint-eval.md) |
 
 Where Sluice loses to LiteLLM (providers, admin UI, key management, budgets per team/user,
 integrations, maturity): see the feature table in [compare.md](bench/results/compare.md).

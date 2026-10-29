@@ -79,6 +79,14 @@ makes a single theft worth less, with no detection logic:
   (`test_rug_pull_is_quarantined_at_the_next_refresh`).
 - The poisoned description also tripped the lint (instruction and sensitive-path flags). The
   repo's own eight tool descriptions trip nothing.
+- **Lint** (`bench/tool_lint_eval.py` → `bench/results/tool-lint-eval.md`):
+  - Benign side: 159 description strings from seven MCP reference servers, read from source.
+    **1 of 63 tool descriptions** was flagged: `sequentialthinking`, at 2,781 characters. In
+    `auto_first` it would wait as pending. No parameter description was flagged.
+  - Poisoned side: 32 labelled synthetic strings. **19 were flagged:** explicit 8/8, hidden 5/5,
+    parameter payloads 4/5, shadowing 2/5, innocently worded **0/9**.
+  - Shadowing is missed when the other tool isn't on a configured server (`send_email` with no
+    mail server in the policy). The lint only knows the policy's tools.
 - Key check cost (micro-benchmark, 1,000 keys in sqlite): 9.2 µs before, 9.3 µs for a key with
   no expiry or networks, 15.6 µs with an expiry and two CIDRs.
 - 195 tests pass with Redis, and ruff is clean.
@@ -93,8 +101,10 @@ makes a single theft worth less, with no detection logic:
 - **Trust on first use:** in `auto_first`, a brand-new tool that reads innocently is served at
   once. `manual` closes that, at the cost of approving every tool.
 - **The lint is a heuristic.** Poisoning can be phrased innocently: MCPTox reports success rates
-  above 60% on some models. The lint hasn't yet been measured against real third-party servers.
-  Until it is, treat its findings as review prompts, not verdicts.
+  above 60% on some models, and the eval's innocently worded strings all got through. Treat its
+  findings as review prompts, not verdicts, and use `manual` where a missed tool would matter.
+  The benign side is small and mostly short descriptions; servers with long, link-heavy
+  descriptions will trip `url` and `long` more often.
 - **Network binding needs the real client address.** In `docker compose`, uvicorn sees the Docker
   bridge, not the host's caller. Put a proxy in front and list it in `auth.trusted_proxies`, or
   bind to the bridge range.
@@ -107,5 +117,3 @@ makes a single theft worth less, with no detection logic:
   rate limits on tool calls.
 - Secret scanning of tool arguments and results.
 - Audit log retention and a hash chain.
-- A precision and recall eval of the lint against real server descriptions and a labelled
-  poisoned set.
