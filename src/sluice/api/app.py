@@ -114,7 +114,11 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         flusher = asyncio.create_task(ledger.run_flusher()) if ledger else None
+        pruner = (asyncio.create_task(_prune_audit(app.state.mcp.audit, days))
+                  if (days := settings.mcp.audit_retention_days) else None)
         yield
+        if pruner:
+            pruner.cancel()
         if flusher:
             flusher.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -565,6 +569,13 @@ def create_app(
         return key
 
     return app
+
+
+async def _prune_audit(audit: McpAudit, days: float, every_s: float = 3600) -> None:
+    """MCP audit retention (ADR 0012): hourly, off the event loop."""
+    while True:
+        await asyncio.to_thread(audit.prune, days)
+        await asyncio.sleep(every_s)
 
 
 def _frame(cid: str, created: int, model: str, delta: dict, finish: str | None) -> str:

@@ -156,6 +156,9 @@ class McpServerConfig(BaseModel):
 class McpConfig(BaseModel):
     servers: dict[str, McpServerConfig] = Field(default_factory=dict)
     audit_db: str | None = None  # default: auth.db_path
+    # Retention (ADR 0012): rows older than this are deleted hourly and checkpointed, so the
+    # hash chain still verifies. None: keep everything.
+    audit_retention_days: float | None = Field(default=None, gt=0)
     # Browsers send Origin; MCP's spec requires checking it (DNS rebinding). CLI clients don't
     # send one. Any Origin not listed here is refused.
     allowed_origins: list[str] = Field(default_factory=list)

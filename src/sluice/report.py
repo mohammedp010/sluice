@@ -5,10 +5,12 @@
     python -m sluice.report --trace <trace id from the x-sluice-trace-id header>
     python -m sluice.report --mcp           # MCP tool calls by key, tool and outcome
     python -m sluice.report --security      # suspended keys, refused calls, secrets, pins
+    python -m sluice.report --verify-audit  # walk the MCP audit's hash chain; print its head
 """
 from __future__ import annotations
 
 import argparse
+import os
 
 from .telemetry.ledger import GROUPS, UsageLedger
 
@@ -30,21 +32,41 @@ def render(rows: list[tuple], by: str) -> str:
 
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="sluice-report")
-    ap.add_argument("--db", default="sluice.db")
+    ap.add_argument("--policy", default=os.environ.get("SLUICE_POLICY"),
+                    help="policy file to read auth.db_path and mcp.audit_db from")
+    ap.add_argument("--db", help="database (default: the policy's auth.db_path, else sluice.db)")
     ap.add_argument("--by", choices=sorted(GROUPS), default="team")
     ap.add_argument("--since", help="UTC date or timestamp prefix, e.g. 2026-10-01")
     ap.add_argument("--trace", help="show the ledger row for one trace id")
     ap.add_argument("--mcp", action="store_true", help="MCP tool-call audit summary")
     ap.add_argument("--security", action="store_true",
                     help="what containment did: suspensions, refused tool calls, secrets, pins")
+    ap.add_argument("--verify-audit", action="store_true",
+                    help="check the MCP audit's hash chain and print its head hash")
     a = ap.parse_args(argv)
+    audit_db = a.db
+    if a.db is None:
+        a.db = audit_db = "sluice.db"
+        if a.policy:
+            from .config import load_settings
+            s = load_settings(a.policy)
+            a.db, audit_db = s.auth.db_path, s.mcp.audit_db or s.auth.db_path
+    if a.verify_audit:
+        from .mcp.audit import McpAudit
+
+        v = McpAudit(audit_db).verify()
+        print(f"OK: {v['rows']} rows chain correctly. Head: {v['head']}\n"
+              "Keep the head somewhere outside this database to catch a rewritten chain."
+              if v["ok"] else f"BROKEN at row {v['bad_id']} after {v['rows']} good rows: "
+              f"{v['why']}")
+        raise SystemExit(0 if v["ok"] else 1)
     if a.security:
-        print(security(a.db, a.since))
+        print(security(a.db, a.since, audit_db))
         return
     if a.mcp:
         from .mcp.audit import McpAudit
 
-        rows = McpAudit(a.db).summary()
+        rows = McpAudit(audit_db).summary()
         w = max([4] + [len(str(r[1])) for r in rows])
         print(f"{'key':<16} {'tool':<{w}} {'outcome':<14} calls")
         for k, tool, outcome, n in rows:
@@ -58,7 +80,7 @@ def main(argv=None):
     print(render(ledger.summary(a.by, a.since), a.by))
 
 
-def security(db: str, since: str | None = None) -> str:
+def security(db: str, since: str | None = None, audit_db: str | None = None) -> str:
     """For the incident runbook (docs/runbook-key-compromise.md, step 4): what the gateway's own
     records say. The watch's alerts live in memory and logs; this reads what's on disk."""
     import json
@@ -68,7 +90,7 @@ def security(db: str, since: str | None = None) -> str:
     from .mcp.audit import McpAudit
     from .mcp.pins import ToolPins
 
-    keys, audit, pins = KeyStore(db), McpAudit(db), ToolPins(db)
+    keys, audit, pins = KeyStore(db), McpAudit(audit_db or db), ToolPins(audit_db or db)
     out = ["Keys not active:"]
     for k, hint in keys.list():
         if k.status != "active":

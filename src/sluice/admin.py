@@ -65,6 +65,9 @@ def main(argv=None):
     s.add_argument("--reason", default="manual")
     u = sub.add_parser("unsuspend-key")
     u.add_argument("id", type=int)
+    pa = sub.add_parser("prune-audit", help="delete MCP audit rows older than --days "
+                        "(checkpointed, so the hash chain still verifies)")
+    pa.add_argument("--days", type=float, required=True)
     lk = sub.add_parser("lockdown", help="incident step 1: suspend every key in scope; without "
                         "--team, also turn paid providers off on every replica")
     lk.add_argument("--team")
@@ -86,9 +89,14 @@ def main(argv=None):
         settings = load_settings(a.policy)
         auth = settings.auth
     db = a.db or (auth.db_path if auth else "sluice.db")
+    audit_db = a.db or (settings and settings.mcp.audit_db) or db
     if a.cmd == "tools":
         from .mcp.pins import ToolPins
-        tools(ToolPins(a.db or (settings and settings.mcp.audit_db) or db), a)
+        tools(ToolPins(audit_db), a)
+        return
+    if a.cmd == "prune-audit":
+        from .mcp.audit import McpAudit
+        print(f"deleted {McpAudit(audit_db).prune(a.days)} audit row(s)")
         return
     store = KeyStore(db)
     default_ttl = parse_duration(auth.key_ttl) if auth and auth.key_ttl else None
