@@ -18,7 +18,9 @@ cd UI && npm install && npm run dev      # http://localhost:5173
 
 Paste the key into the Lab's key field. It's kept in this browser's localStorage only. The dev
 server proxies `/v1`, `/mcp`, `/metrics` and `/healthz` to `localhost:8000`, or to `SLUICE_URL`
-if you set it. Evidence, Decisions and Build log read repo files at build time, so they work
+if you set it. The admin API answers loopback callers only, which the dev server is. If the
+gateway runs with `SLUICE_ADMIN_TOKEN`, start the dev server with the same variable and it adds
+the token to admin requests itself; the browser never sees it (ADR 0010). Evidence, Decisions and Build log read repo files at build time, so they work
 with the gateway off.
 
 ## Panels

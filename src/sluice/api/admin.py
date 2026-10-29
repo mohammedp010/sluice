@@ -5,14 +5,18 @@ recent traces (telemetry/recent.py), the usage ledger, the key store and the MCP
 Nothing writes, and nothing changes how a request is handled. Key hashes are never returned,
 only the 4-character hint the admin CLI shows.
 
-No authentication: it is meant for a gateway on localhost. That is why it is off by default
-(see AdminConfig) and off in the docker-compose policy.
+Access (ADR 0010): with no admin token set, only loopback clients get in. With one set (the env
+var named by `admin.token_env`), every request needs it as a bearer token. A virtual key never
+opens the admin API: it is a separate credential, so a leaked app key can't read the ledger or
+the key list. It is still off by default and off in the docker-compose policy.
 """
 from __future__ import annotations
 
+import hmac
+import ipaddress
 import os
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from ..config import Route
 from ..telemetry.ledger import GROUPS
@@ -28,8 +32,38 @@ def _route(r: Route) -> dict:
     return d
 
 
-def admin_router(recent: RecentTraces) -> APIRouter:
-    api = APIRouter(prefix="/v1/sluice/admin")
+MIN_TOKEN_CHARS = 32
+
+
+def _is_loopback(host: str | None) -> bool:
+    try:
+        return ipaddress.ip_address(host or "").is_loopback
+    except ValueError:  # no client, or not an IP
+        return False
+
+
+def admin_guard(token_env: str):
+    """A dependency that admits a request to the admin API, or raises 401/403."""
+    token = os.environ.get(token_env) or None  # read once, like provider keys
+    if token is not None and len(token) < MIN_TOKEN_CHARS:
+        raise ValueError(f"{token_env} must be at least {MIN_TOKEN_CHARS} characters")
+
+    async def check(request: Request) -> None:
+        if token is None:
+            if not _is_loopback(request.client.host if request.client else None):
+                raise HTTPException(403, f"admin API is loopback-only until {token_env} is set")
+            return
+        auth = request.headers.get("authorization", "")
+        given = auth[7:].strip() if auth.lower().startswith("bearer ") else ""
+        if not hmac.compare_digest(given.encode(), token.encode()):  # constant time
+            raise HTTPException(401, "invalid or missing admin token",
+                                headers={"WWW-Authenticate": "Bearer"})
+
+    return check
+
+
+def admin_router(recent: RecentTraces, token_env: str) -> APIRouter:
+    api = APIRouter(prefix="/v1/sluice/admin", dependencies=[Depends(admin_guard(token_env))])
 
     @api.get("/overview")
     async def overview(request: Request):

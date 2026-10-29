@@ -148,9 +148,11 @@ class McpConfig(BaseModel):
 
 class AdminConfig(BaseModel):
     """Read-only admin API under /v1/sluice/admin (policy, recent traces, ledger, keys without
-    secrets, MCP audit) for the UI. Off by default: it shows who spent what, unauthenticated."""
+    secrets, MCP audit) for the UI. Off by default: it shows who spent what. Loopback-only
+    unless the env var `token_env` holds an admin token (32+ chars); then it needs that token."""
 
     enabled: bool = False
+    token_env: str = "SLUICE_ADMIN_TOKEN"  # name of an env var; never put the token in YAML
     recent_traces: int = Field(default=200, ge=1)  # traces held in memory for the UI
 
 

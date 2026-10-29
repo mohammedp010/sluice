@@ -123,7 +123,10 @@ def create_app(
         await upstreams.close()
         tel.shutdown()
 
-    app = FastAPI(title="Sluice", lifespan=lifespan)
+    # No /docs, /redoc or /openapi.json: they would map every route, admin included, for anyone
+    # who can reach the port. The API is OpenAI's, documented elsewhere. (ADR 0010)
+    app = FastAPI(title="Sluice", lifespan=lifespan, docs_url=None, redoc_url=None,
+                  openapi_url=None)
     app.state.settings = settings
     app.state.providers = providers or build_providers(settings)
     app.state.shared = state or build_state(settings)
@@ -152,7 +155,7 @@ def create_app(
     if settings.admin.enabled:  # read-only API for the UI; also keeps the last N traces
         recent = RecentTraces(settings.admin.recent_traces)
         tel.tracer_provider.add_span_processor(recent)
-        app.include_router(admin_router(recent))
+        app.include_router(admin_router(recent, settings.admin.token_env))
 
     @app.middleware("http")
     async def body_size_cap(request: Request, call_next):
@@ -213,12 +216,18 @@ def create_app(
 
     @app.get("/v1/models")
     async def list_models(request: Request):
+        # Needs a key, like OpenAI's, and lists only what that key may use: route and provider
+        # names are a map for anyone probing the port. (ADR 0010)
+        key = _authenticate(request) if settings.auth.enabled else ANON
+        if key is None:
+            return _error(401, "Invalid or missing API key", "invalid_api_key",
+                          {"WWW-Authenticate": "Bearer"})
         now = int(time.time())
         return {
             "object": "list",
             "data": [
                 {"id": m, "object": "model", "created": now, "owned_by": r.chain[0].provider}
-                for m, r in request.app.state.settings.routes.items()
+                for m, r in request.app.state.settings.routes.items() if key.allows(m)
             ],
         }
 
