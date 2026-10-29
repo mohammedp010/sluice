@@ -167,6 +167,27 @@ class McpConfig(BaseModel):
     lint_max_description: int = Field(default=1024, ge=1)
 
 
+class GuardConfig(BaseModel):
+    """Secret egress guard (ADR 0012). Tool rules map `server__tool` globs to a mode; the first
+    glob that matches wins, and a tool no glob matches is `off`. Findings are logged as type and
+    position, never the value."""
+
+    # off | audit | block: block refuses the call (and C5 suspends the key)
+    tool_args: dict[str, Literal["off", "audit", "block"]] = Field(
+        default_factory=lambda: {"*": "audit"})
+    # off | audit | redact: redact replaces each match with [REDACTED:<type>]
+    tool_results: dict[str, Literal["off", "audit", "redact"]] = Field(
+        default_factory=lambda: {"*": "audit"})
+    # prompts sent upstream: off | audit | block (400 secret_in_prompt)
+    chat: Literal["off", "audit", "block"] = "audit"
+
+    @staticmethod
+    def mode(rules: dict[str, str], tool: str) -> str:
+        import fnmatch
+
+        return next((m for g, m in rules.items() if fnmatch.fnmatchcase(tool, g)), "off")
+
+
 class AdminConfig(BaseModel):
     """Read-only admin API under /v1/sluice/admin (policy, recent traces, ledger, keys without
     secrets, MCP audit) for the UI. Off by default: it shows who spent what. Loopback-only
@@ -185,6 +206,7 @@ class Settings(BaseModel):
     state: StateConfig = Field(default_factory=StateConfig)
     limits: LimitsConfig = Field(default_factory=LimitsConfig)
     admin: AdminConfig = Field(default_factory=AdminConfig)
+    guard: GuardConfig = Field(default_factory=GuardConfig)
     providers: dict[str, ProviderConfig]
     routes: dict[str, Route] = Field(default_factory=dict)  # public model name -> target
 

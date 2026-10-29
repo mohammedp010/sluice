@@ -12,14 +12,21 @@ for what's there. Every tools/call is audited, denials included.
 
 Tool pinning (pins.py, ADR 0011): a tool whose definition changed since it was trusted
 (quarantined), or that hasn't been trusted yet (pending), is hidden and refused the same way.
+
+Egress guard (guard/secrets.py, ADR 0012): arguments are scanned for secrets before they are
+forwarded (audit or block, per tool glob), and results before they are returned (audit or
+redact). The audit row records each finding's type and position, never the value.
 """
 from __future__ import annotations
 
+import json
 import time
 
 from opentelemetry import trace
 
 from ..auth.keys import VirtualKey
+from ..config import GuardConfig
+from ..guard.secrets import Finding, redact_json, scan_json
 from .audit import McpAudit, args_digest
 from .upstream import UpstreamDown, Upstreams
 
@@ -37,10 +44,25 @@ def _result(id_, result: dict) -> dict:
 
 
 class McpProxy:
-    def __init__(self, upstreams: Upstreams, audit: McpAudit, tracer):
+    def __init__(self, upstreams: Upstreams, audit: McpAudit, tracer,
+                 guard: GuardConfig | None = None, metrics=None):
         self.up = upstreams
         self.audit = audit
         self.tracer = tracer
+        self.guard = guard or GuardConfig()
+        self.metrics = metrics
+
+    def _seen(self, span, where: str, action: str, found: list[Finding]) -> list[dict]:
+        briefs = [{"where": where, **f.brief()} for f in found]
+        span.add_event("sluice.guard.findings", {
+            "sluice.guard.where": where, "sluice.guard.action": action,
+            "sluice.guard.findings": [json.dumps(b) for b in briefs]})
+        if self.metrics:
+            for f in found:
+                self.metrics.guard_findings.add(1, {"sluice.guard.where": where,
+                                                    "sluice.guard.type": f.type,
+                                                    "sluice.guard.action": action})
+        return briefs
 
     async def handle(self, msg: object, key: VirtualKey) -> dict | None:
         """One JSON-RPC message in, one response out (None for notifications)."""
@@ -87,11 +109,13 @@ class McpProxy:
             audit = {"trace_id": tid, "key_id": key.id, "key_name": key.name, "team": key.team,
                      "tool": name, "args_sha256": digest, "args_bytes": size}
             t0 = time.monotonic()
+            egress: list[dict] = []
 
             async def done(outcome: str, error: str | None = None) -> None:
                 span.set_attribute("sluice.outcome", outcome)
                 await self.audit.record(**audit, outcome=outcome, error=error,
-                                        latency_ms=round((time.monotonic() - t0) * 1000, 1))
+                                        latency_ms=round((time.monotonic() - t0) * 1000, 1),
+                                        egress=json.dumps(egress) if egress else None)
 
             known = await self.up.tools()
             if not key.allows_tool(name) or name not in known or not self._trusted(name):
@@ -99,6 +123,15 @@ class McpProxy:
                            if not key.allows_tool(name) else self.up.pins.status(name))
                 await done(outcome)  # denied, unknown, pending or quarantined
                 return rpc_error(id_, INVALID_PARAMS, f"Unknown tool: {name}")  # same for all
+            mode = GuardConfig.mode(self.guard.tool_args, name)
+            found = scan_json(args) if mode != "off" else []
+            if found:
+                egress += self._seen(span, "tool_args", mode, found)
+                if mode == "block":
+                    await done("egress_blocked")
+                    kinds = ", ".join(sorted({f.type for f in found}))
+                    return rpc_error(id_, INVALID_PARAMS,
+                                     f"Tool call blocked: the arguments contain a secret ({kinds})")
             try:
                 result = await self.up.call(name, args)
             except UpstreamDown as e:
@@ -107,5 +140,12 @@ class McpProxy:
             except Exception as e:  # noqa: BLE001 -- timeouts, protocol errors from the server
                 await done("error", f"{type(e).__name__}: {e}"[:300])
                 return rpc_error(id_, INTERNAL, f"tool call failed: {type(e).__name__}")
+            out = result.model_dump(exclude_none=True, by_alias=True)
+            mode = GuardConfig.mode(self.guard.tool_results, name)
+            found = scan_json(out) if mode != "off" else []
+            if found:
+                egress += self._seen(span, "tool_results", mode, found)
+                if mode == "redact":
+                    out = redact_json(out)
             await done("tool_error" if result.isError else "ok")
-            return _result(id_, result.model_dump(exclude_none=True, by_alias=True))
+            return _result(id_, out)

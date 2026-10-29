@@ -29,6 +29,7 @@ from ..config import (
     build_state,
     load_settings,
 )
+from ..guard.secrets import scan
 from ..limits.estimate import cost_micro_usd, estimate_prompt_tokens
 from ..limits.state import SharedState
 from ..mcp.audit import McpAudit
@@ -139,8 +140,6 @@ def create_app(
     mc = settings.mcp
     upstreams = Upstreams(mc.servers, mc.tools_ttl_s, pins=tool_pins or ToolPins(
         mc.audit_db or settings.auth.db_path, mc.pin_mode, mc.lint_max_description))
-    app.state.mcp = McpProxy(upstreams, mcp_audit or McpAudit(
-        mc.audit_db or settings.auth.db_path), tracer)
 
     paid = frozenset(n for n, c in settings.providers.items() if c.paid)
 
@@ -156,6 +155,8 @@ def create_app(
     trusted_proxies = parse_networks(settings.auth.trusted_proxies)
     metrics = Metrics(
         tel.meter(), lambda: {n: b.state.value for n, b in app.state.executor.breakers.items()})
+    app.state.mcp = McpProxy(upstreams, mcp_audit or McpAudit(
+        mc.audit_db or settings.auth.db_path), tracer, settings.guard, metrics)
 
     if settings.admin.enabled:  # read-only API for the UI; also keeps the last N traces
         recent = RecentTraces(settings.admin.recent_traces)
@@ -278,6 +279,22 @@ def create_app(
             return _error(404, f"The model '{req.model}' does not exist", "model_not_found")
         if not key.allows(req.model):
             return _error(403, f"This key may not use model '{req.model}'", "model_not_allowed")
+        if settings.guard.chat != "off":  # secrets about to leave for a provider (ADR 0012)
+            found = [f for i, m in enumerate(req.messages)
+                     for f in scan(m.content, f"messages[{i}]")]
+            if found:
+                action = "block" if settings.guard.chat == "block" else "audit"
+                for f in found:
+                    metrics.guard_findings.add(1, {"sluice.guard.where": "chat",
+                                                   "sluice.guard.type": f.type,
+                                                   "sluice.guard.action": action})
+                log.span.add_event("sluice.guard.findings", {
+                    "sluice.guard.action": action,
+                    "sluice.guard.findings": [json.dumps(f.brief()) for f in found]})
+                if action == "block":
+                    return _error(400, "The prompt contains what looks like a secret "
+                                  f"({', '.join(sorted({f.type for f in found}))}); not sent",
+                                  "secret_in_prompt")
 
         sh: SharedState = request.app.state.shared
         ex: Executor = request.app.state.executor

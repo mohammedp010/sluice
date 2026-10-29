@@ -99,6 +99,9 @@ class Metrics:
             "sluice.stream_resumes", "{resume}", "Streams continued on another provider")
         self.fallbacks = meter.create_counter(
             "sluice.fallbacks", "{fallback}", "Times a target was abandoned for the next one")
+        self.guard_findings = meter.create_counter(
+            "sluice.guard.findings", "{finding}",
+            "Secrets seen in traffic, by where (tool_args, tool_results, chat), type and action")
         self.auth_rejections = meter.create_counter(
             "sluice.auth.rejections", "{request}",
             "Requests refused at the key check, by reason (missing, unknown, expired, ...)")

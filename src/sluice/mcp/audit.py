@@ -15,7 +15,7 @@ import threading
 from datetime import UTC, datetime
 
 COLUMNS = ("ts", "trace_id", "key_id", "key_name", "team", "tool", "outcome", "args_sha256",
-           "args_bytes", "latency_ms", "error")
+           "args_bytes", "latency_ms", "error", "egress")
 
 
 def args_digest(args: dict) -> tuple[str, int]:
@@ -34,6 +34,10 @@ class McpAudit:
                     key_id INTEGER, key_name TEXT, team TEXT, tool TEXT NOT NULL,
                     outcome TEXT NOT NULL, args_sha256 TEXT, args_bytes INTEGER,
                     latency_ms REAL, error TEXT)""")
+            cols = {r[1] for r in self._db.execute("PRAGMA table_info(mcp_audit)")}
+            if "egress" not in cols:  # before the egress guard (ADR 0012)
+                # secrets seen in arguments or results: JSON list of type + position, no values
+                self._db.execute("ALTER TABLE mcp_audit ADD COLUMN egress TEXT")
 
     def _write(self, row: dict) -> None:
         with self._lock, self._db:
