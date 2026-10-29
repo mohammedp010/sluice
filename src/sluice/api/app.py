@@ -32,6 +32,7 @@ from ..config import (
 from ..limits.estimate import cost_micro_usd, estimate_prompt_tokens
 from ..limits.state import SharedState
 from ..mcp.audit import McpAudit
+from ..mcp.pins import ToolPins
 from ..mcp.proxy import PARSE_ERROR, SUPPORTED, McpProxy, rpc_error
 from ..mcp.upstream import Upstreams
 from ..providers.base import (
@@ -97,6 +98,7 @@ def create_app(
     ledger: UsageLedger | None = None,
     cache: SemanticCache | None = None,
     mcp_audit: McpAudit | None = None,
+    tool_pins: ToolPins | None = None,
 ):
     settings = settings or load_settings(os.environ.get("SLUICE_POLICY", DEFAULT_POLICY))
     tcfg = settings.telemetry
@@ -134,9 +136,11 @@ def create_app(
     app.state.telemetry = tel
     app.state.ledger = ledger
     app.state.cache = cache
-    upstreams = Upstreams(settings.mcp.servers)
+    mc = settings.mcp
+    upstreams = Upstreams(mc.servers, mc.tools_ttl_s, pins=tool_pins or ToolPins(
+        mc.audit_db or settings.auth.db_path, mc.pin_mode, mc.lint_max_description))
     app.state.mcp = McpProxy(upstreams, mcp_audit or McpAudit(
-        settings.mcp.audit_db or settings.auth.db_path), tracer)
+        mc.audit_db or settings.auth.db_path), tracer)
 
     paid = frozenset(n for n, c in settings.providers.items() if c.paid)
 

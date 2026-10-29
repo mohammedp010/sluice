@@ -25,6 +25,7 @@ limits:
 mcp:                          # Phase 8: MCP tool servers behind /mcp (keys need --tools grants)
   servers: {}                 # e.g. files: {command: ["npx", "-y", "@modelcontextprotocol/server-filesystem", "/tmp"]}
   allowed_origins: []         # browser Origins allowed to call /mcp
+  pin_mode: auto_first        # or manual; a changed tool definition is quarantined (ADR 0011)
 
 providers:
   mock:

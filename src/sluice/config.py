@@ -159,6 +159,12 @@ class McpConfig(BaseModel):
     # Browsers send Origin; MCP's spec requires checking it (DNS rebinding). CLI clients don't
     # send one. Any Origin not listed here is refused.
     allowed_origins: list[str] = Field(default_factory=list)
+    # Tool pinning (ADR 0011). auto_first: trust a tool on first sight unless the lint flags
+    # it; manual: every new tool waits for `sluice.admin tools approve`. A changed definition
+    # is quarantined either way, found at the next refresh (every tools_ttl_s).
+    pin_mode: Literal["auto_first", "manual"] = "auto_first"
+    tools_ttl_s: float = Field(default=60.0, gt=0)
+    lint_max_description: int = Field(default=1024, ge=1)
 
 
 class AdminConfig(BaseModel):

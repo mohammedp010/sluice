@@ -156,6 +156,19 @@ export interface McpInfo {
   servers: Record<string, "stdio" | "http">;
   summary: { key: string; tool: string; outcome: string; calls: number }[];
   audit: AuditRow[];
+  pins: PinRow[];
+}
+
+/** A tool's pin (ADR 0011): the trusted definition's hash against the one seen last. */
+export interface PinRow {
+  tool: string;
+  status: "approved" | "pending" | "quarantined";
+  pinned_sha256: string;
+  seen_sha256: string;
+  flags: string; // JSON list of lint findings
+  first_seen: string;
+  changed_at: string | null;
+  approved_at: string | null;
 }
 
 /** Why a read failed, in terms the UI can explain. */

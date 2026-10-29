@@ -156,6 +156,7 @@ def admin_router(recent: RecentTraces, token_env: str,
             "summary": [dict(zip(("key", "tool", "outcome", "calls"), r))
                         for r in audit.summary()],
             "audit": audit.rows(limit),
+            "pins": request.app.state.mcp.up.pins.rows() if request.app.state.mcp.up.pins else [],
         }
 
     return api

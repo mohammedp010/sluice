@@ -8,7 +8,8 @@ import { ApiProblem, Empty, SkeletonRows, usePoll } from "../components/state";
 const globMatch = (pattern: string, name: string) =>
   new RegExp(`^${pattern.replace(/[.+^${}()|\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".")}$`).test(name);
 
-const OUTCOME_CLS: Record<string, string> = { ok: "ok", denied: "bad", unknown: "warn", error: "bad", tool_error: "warn" };
+const OUTCOME_CLS: Record<string, string> = { ok: "ok", denied: "bad", unknown: "warn", error: "bad", tool_error: "warn", quarantined: "bad", pending: "warn" };
+const PIN_CLS: Record<string, string> = { approved: "ok", pending: "warn", quarantined: "bad" };
 
 export default function Mcp() {
   const mcp = usePoll(api.mcp, 4000);
@@ -69,6 +70,37 @@ export default function Mcp() {
                   </table>
                 )}
                 {!tools.length && keys.data?.length ? <p style={{ padding: 12, fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>No tool calls audited yet, so there are no tool columns.</p> : null}
+              </div>
+            </section>
+
+            <section className="section">
+              <h2>Pins</h2>
+              <p className="lead">
+                Each tool definition is hashed when first seen. A changed one is quarantined: hidden and refused like an unknown tool until
+                {" "}<code>python -m sluice.admin tools diff</code> and <code>tools approve</code>. New tools that trip the lint wait as pending.
+              </p>
+              <div className="frame tblwrap">
+                {!mcp.data!.pins.length ? (
+                  <Empty icon={<Wrench aria-hidden />} title="No tools pinned yet">Tools are pinned the first time the gateway lists them.</Empty>
+                ) : (
+                  <table className="tbl">
+                    <thead><tr><th>tool</th><th>status</th><th>trusted · seen</th><th>changed</th><th>lint</th></tr></thead>
+                    <tbody>
+                      {mcp.data!.pins.map((p) => {
+                        const flags: string[] = JSON.parse(p.flags);
+                        return (
+                          <tr key={p.tool}>
+                            <td className="mono">{p.tool}</td>
+                            <td><span className={`pill ${PIN_CLS[p.status] ?? "neutral"}`}>{p.status}</span></td>
+                            <td className="mono">{p.pinned_sha256.slice(0, 8)}{p.seen_sha256 !== p.pinned_sha256 && <> → {p.seen_sha256.slice(0, 8)}</>}</td>
+                            <td className="mono">{p.changed_at ? `${p.changed_at} UTC` : "—"}</td>
+                            <td className="mono">{flags.length ? flags.join("; ") : "—"}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </section>
 

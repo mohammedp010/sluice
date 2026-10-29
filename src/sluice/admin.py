@@ -6,6 +6,8 @@ The database and the default key lifetime come from the policy in --policy or $S
 from __future__ import annotations
 
 import argparse
+import difflib
+import json
 import os
 from datetime import UTC, datetime
 
@@ -62,13 +64,27 @@ def main(argv=None):
     s.add_argument("--reason", default="manual")
     u = sub.add_parser("unsuspend-key")
     u.add_argument("id", type=int)
+    t = sub.add_parser("tools", help="MCP tool pins: list, diff and approve (ADR 0011)")
+    tsub = t.add_subparsers(dest="tcmd", required=True)
+    tsub.add_parser("list")
+    td = tsub.add_parser("diff", help="the trusted definition against the one seen last")
+    td.add_argument("tool", help="public name, server__tool")
+    ta = tsub.add_parser("approve", help="trust the definition seen last")
+    ta.add_argument("tool")
+    ta.add_argument("--sha", help="only if the definition seen last still has this sha256 prefix")
     a = ap.parse_args(argv)
 
-    auth = None
+    auth = settings = None
     if a.policy:
         from .config import load_settings
-        auth = load_settings(a.policy).auth
-    store = KeyStore(a.db or (auth.db_path if auth else "sluice.db"))
+        settings = load_settings(a.policy)
+        auth = settings.auth
+    db = a.db or (auth.db_path if auth else "sluice.db")
+    if a.cmd == "tools":
+        from .mcp.pins import ToolPins
+        tools(ToolPins(a.db or (settings and settings.mcp.audit_db) or db), a)
+        return
+    store = KeyStore(db)
     default_ttl = parse_duration(auth.key_ttl) if auth and auth.key_ttl else None
 
     if a.cmd == "create-key":
@@ -106,6 +122,33 @@ def main(argv=None):
         print("suspended" if store.suspend(a.id, a.reason) else "no such key, or it is revoked")
     elif a.cmd == "unsuspend-key":
         print("active" if store.unsuspend(a.id) else "no such key, or it isn't suspended")
+
+
+def tools(pins, a) -> None:
+    if a.tcmd == "list":
+        for r in pins.rows():
+            flags = json.loads(r["flags"])
+            print(f"{r['tool']:<32} {r['status']:<12} {r['seen_sha256'][:12]}"
+                  f"  changed={r['changed_at'] or '-'}{'  flags: ' + '; '.join(flags) if flags else ''}")
+        return
+    r = pins.get(a.tool)
+    if r is None:
+        print("no such tool (it is pinned when the gateway first lists it)")
+        return
+    if a.tcmd == "diff":
+        old, new = (json.dumps(json.loads(r[c]), indent=2, ensure_ascii=False).splitlines()
+                    for c in ("pinned_definition", "seen_definition"))
+        print(f"{a.tool}: {r['status']}\n" + ("\n".join(difflib.unified_diff(
+            old, new, f"trusted {r['pinned_sha256'][:12]}", f"seen {r['seen_sha256'][:12]}",
+            lineterm="")) or "(no change since it was trusted)"))
+        for f in json.loads(r["flags"]):
+            print(f"lint: {f}")
+        print(f"approve with: python -m sluice.admin tools approve {a.tool} "
+              f"--sha {r['seen_sha256'][:12]}")
+    elif a.tcmd == "approve":
+        sha = pins.approve(a.tool, a.sha)
+        print(f"approved {a.tool} at {sha[:12]}; replicas serve it after their next tool refresh"
+              if sha else "not approved: the definition changed since that sha; diff it again")
 
 
 if __name__ == "__main__":

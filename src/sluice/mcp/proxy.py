@@ -9,6 +9,9 @@ Supported: initialize, ping, tools/list, tools/call. Tools from every upstream s
 merged under "<server>__<tool>" names and filtered by the caller's key (deny by default). A
 tool the key may not use is reported exactly like one that doesn't exist, so a key can't probe
 for what's there. Every tools/call is audited, denials included.
+
+Tool pinning (pins.py, ADR 0011): a tool whose definition changed since it was trusted
+(quarantined), or that hasn't been trusted yet (pending), is hidden and refused the same way.
 """
 from __future__ import annotations
 
@@ -61,10 +64,14 @@ class McpProxy:
             tools = await self.up.tools()
             return _result(id_, {"tools": [
                 {**t.model_dump(exclude_none=True, by_alias=True), "name": name}
-                for name, t in sorted(tools.items()) if key.allows_tool(name)]})
+                for name, t in sorted(tools.items())
+                if key.allows_tool(name) and self._trusted(name)]})
         if method == "tools/call":
             return await self._call(id_, params, key)
         return rpc_error(id_, METHOD_NOT_FOUND, f"method not supported: {method}")
+
+    def _trusted(self, name: str) -> bool:
+        return self.up.pins is None or self.up.pins.status(name) == "approved"
 
     async def _call(self, id_, params: dict, key: VirtualKey) -> dict:
         name, args = params.get("name"), params.get("arguments") or {}
@@ -87,9 +94,11 @@ class McpProxy:
                                         latency_ms=round((time.monotonic() - t0) * 1000, 1))
 
             known = await self.up.tools()
-            if not key.allows_tool(name) or name not in known:
-                await done("denied" if name in known else "unknown")
-                return rpc_error(id_, INVALID_PARAMS, f"Unknown tool: {name}")  # same either way
+            if not key.allows_tool(name) or name not in known or not self._trusted(name):
+                outcome = ("unknown" if name not in known else "denied"
+                           if not key.allows_tool(name) else self.up.pins.status(name))
+                await done(outcome)  # denied, unknown, pending or quarantined
+                return rpc_error(id_, INVALID_PARAMS, f"Unknown tool: {name}")  # same for all
             try:
                 result = await self.up.call(name, args)
             except UpstreamDown as e:
