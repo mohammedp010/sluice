@@ -51,9 +51,11 @@ class Upstreams:
         try:
             async with AsyncExitStack() as stack:
                 if cfg.command:
+                    # Only the server's own `env:` block. The SDK adds a safe base (PATH, HOME,
+                    # USER, ...) but never the rest of os.environ, which holds provider keys.
                     env = {k: os.path.expandvars(v) for k, v in cfg.env.items()}
                     params = StdioServerParameters(command=cfg.command[0], args=cfg.command[1:],
-                                                   env={**os.environ, **env})
+                                                   env=env)
                     read, write = await stack.enter_async_context(stdio_client(params))
                 else:
                     http = await stack.enter_async_context(

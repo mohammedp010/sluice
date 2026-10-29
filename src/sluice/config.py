@@ -1,6 +1,7 @@
 """Policy file loading. Routes are data, not code (see policies/routes.yaml)."""
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Literal
 
@@ -117,11 +118,16 @@ class CacheConfig(BaseModel):
     max_temperature: float = 0.0  # requests asking for more randomness than this skip the cache
 
 
+_ENV_REF = re.compile(r"\$(?:(\w+)|\{([^}]*)\})")  # $VAR or ${VAR}
+
+
 class McpServerConfig(BaseModel):
     """One upstream MCP server: a local command (stdio) or a URL (Streamable HTTP)."""
 
     command: list[str] | None = None
-    env: dict[str, str] = Field(default_factory=dict)  # values may be "$VAR" (read at start)
+    # The server's whole environment, on top of the SDK's safe base (PATH, HOME, ...): it does
+    # not inherit the gateway's. Values may be "$VAR" (read at start), never a provider key.
+    env: dict[str, str] = Field(default_factory=dict)
     url: str | None = None
     timeout_s: float = 30.0  # per tool call
 
@@ -169,6 +175,14 @@ class Settings(BaseModel):
                         raise ValueError(
                             f"route '{model}' references unknown provider '{t.provider}'")
                 r = r.escalate
+        # A tool server is third-party code; it never needs an LLM key, so asking is an error
+        provider_keys = {c.api_key_env for c in self.providers.values() if c.api_key_env}
+        for server, m in self.mcp.servers.items():
+            for var, value in m.env.items():
+                refs = {a or b for a, b in _ENV_REF.findall(value)}  # as os.path.expandvars
+                if refs & provider_keys:
+                    raise ValueError(f"mcp server '{server}' env '{var}' references provider key "
+                                     f"{sorted(refs & provider_keys)}; tool servers may not get one")
         return self
 
 

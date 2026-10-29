@@ -93,7 +93,7 @@ the API on and adds mock routes that fail on purpose. Setup is in [UI/README.md]
 
 ```bash
 redis-server --port 6399 --save "" &      # optional: the Redis tests skip without it
-.venv/bin/pytest                          # 142 tests, ~4 s
+.venv/bin/pytest                          # 147 tests, ~4 s
 ```
 
 The LiteLLM comparison needs LiteLLM in its own environment (pinned, Python 3.12) and uvloop:

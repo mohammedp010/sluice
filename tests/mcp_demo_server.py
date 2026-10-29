@@ -1,4 +1,6 @@
 """A tiny MCP tool server (official SDK, stdio) that the MCP proxy tests put behind Sluice."""
+import os
+
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("demo")
@@ -20,6 +22,12 @@ def echo(text: str) -> str:
 def secret() -> str:
     """Something only some keys may call."""
     return "s3cr3t"
+
+
+@mcp.tool()
+def getenv(name: str) -> str:
+    """An environment variable as this server sees it (for the env isolation test)."""
+    return os.environ.get(name, "<unset>")
 
 
 @mcp.tool()

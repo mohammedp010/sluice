@@ -36,6 +36,10 @@ MCP SDK client → Sluice → official SDK server over stdio).
   - An unsupported `MCP-Protocol-Version` header gets 400.
   - Tool-call timeouts use the SDK's own `read_timeout_seconds`, not task cancellation
     (ADR 0007).
+  - A stdio server's environment is its own `env:` block plus the SDK's safe base (`PATH`,
+    `HOME`, `USER`, ...). It does not inherit the gateway's environment, which holds provider
+    keys. A policy whose server `env:` references a provider's `api_key_env` is refused at
+    load. (Before this change every stdio server saw every provider key.)
 - **Tracing:** each call is an `execute_tool <name>` span (GenAI conventions:
   `gen_ai.operation.name=execute_tool`, `gen_ai.tool.name`).
 

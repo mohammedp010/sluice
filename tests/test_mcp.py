@@ -80,6 +80,38 @@ async def test_tool_errors_are_results_and_audit_keeps_no_raw_arguments():
     assert "hunter2" not in json.dumps(rows)
 
 
+async def test_stdio_server_gets_only_its_own_env_not_the_gateways(monkeypatch):
+    monkeypatch.setenv("SLUICE_TEST_PROVIDER_KEY", "sk-provider-leak")
+    monkeypatch.setenv("SLUICE_TEST_OTHER", "gateway-only")
+    monkeypatch.setenv("SLUICE_TEST_TOOL_TOKEN", "t0k")
+    settings = Settings(
+        providers={"mock": {"type": "mock"},
+                   "hosted": {"type": "openai_compat", "base_url": "http://127.0.0.1:9/v1",
+                              "api_key_env": "SLUICE_TEST_PROVIDER_KEY"}},
+        routes={"m": ROUTE},
+        mcp={"servers": {"demo": {"command": SERVER,
+                                  "env": {"TOKEN": "$SLUICE_TEST_TOOL_TOKEN"}}}})
+    app, raw = make_app(settings, key_kw={"allowed_tools": ["demo__getenv"]})
+    async with sdk_session(app, raw) as s:
+        seen = {n: (await s.call_tool("demo__getenv", {"name": n})).content[0].text
+                for n in ("SLUICE_TEST_PROVIDER_KEY", "SLUICE_TEST_OTHER", "TOKEN", "PATH")}
+    assert seen["SLUICE_TEST_PROVIDER_KEY"] == "<unset>"  # the provider key never reaches it
+    assert seen["SLUICE_TEST_OTHER"] == "<unset>"  # nor anything else of the gateway's
+    assert seen["TOKEN"] == "t0k"  # what the policy gives it, it gets
+    assert seen["PATH"] != "<unset>"  # and the SDK's safe base, so commands still resolve
+
+
+@pytest.mark.parametrize("value", ["$OPENAI_KEY", "${OPENAI_KEY}", "Bearer $OPENAI_KEY"])
+def test_policy_refuses_to_hand_a_provider_key_to_a_tool_server(value):
+    providers = {"hosted": {"type": "openai_compat", "base_url": "http://x/v1",
+                            "api_key_env": "OPENAI_KEY"}}
+    with pytest.raises(ValueError, match="provider key"):
+        Settings(providers=providers,
+                 mcp={"servers": {"t": {"command": ["x"], "env": {"K": value}}}})
+    Settings(providers=providers,  # other variables are fine
+             mcp={"servers": {"t": {"command": ["x"], "env": {"K": "$OPENAI_KEY_ID"}}}})
+
+
 async def test_no_grants_means_no_tools():
     app, raw = mcp_app([])
     async with sdk_session(app, raw) as s:
