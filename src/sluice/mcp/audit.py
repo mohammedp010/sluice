@@ -38,7 +38,7 @@ class McpAudit:
     def _write(self, row: dict) -> None:
         with self._lock, self._db:
             self._db.execute(
-                f"INSERT INTO mcp_audit ({','.join(COLUMNS)}) "
+                f"INSERT INTO mcp_audit ({','.join(COLUMNS)}) "  # noqa: S608 -- constant columns
                 f"VALUES ({','.join('?' * len(COLUMNS))})", tuple(row.get(c) for c in COLUMNS))
 
     async def record(self, **row) -> None:

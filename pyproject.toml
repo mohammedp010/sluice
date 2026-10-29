@@ -34,3 +34,8 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
+
+[tool.ruff.lint]
+# S608: SQL built from strings. Every query binds its values; the few that join constant column
+# names say so with a noqa. (ADR 0010; LiteLLM's CVE-2026-42208 was a concatenated key check.)
+extend-select = ["S608"]
