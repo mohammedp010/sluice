@@ -4,7 +4,8 @@ An OpenAI-compatible LLM gateway, built phase by phase as a learning project. It
 sits between applications and model providers and decides how much traffic flows, where it
 goes, and when to shut it off. It handles keys, rate limits and budgets, retries, fallback and
 circuit breaking, tracing and cost attribution, a semantic cache, cheap-first routing, stream
-resume after a mid-answer failure, and an MCP tool proxy with per-key permissions.
+resume after a mid-answer failure, an MCP tool proxy with per-key permissions, and hardening
+against the ways AI gateways were attacked in 2026 (ADR 0010).
 
 **Total spent on LLM APIs: $0.** Every model call in this repo went to a mock upstream or to a
 local Ollama model. Paid providers are blocked unless `SLUICE_ALLOW_PAID=1`, and even then
@@ -80,20 +81,23 @@ Two replicas + Redis + Jaeger: `docker compose up` (policy `policies/compose.yam
 | Quality routing | `escalate:` route + `escalate_on:` checks | ADR 0006 |
 | Stream resume | `stream_resume: prefill` on a route (backup must honour prefill) | ADR 0008 |
 | MCP proxy | `mcp.servers` in the policy; keys get `--tools "server__tool*"` grants; `python -m sluice.report --mcp` | ADR 0009 |
+| Hardening | tool servers never see provider keys; admin API loopback-only or `SLUICE_ADMIN_TOKEN`; every route classified in `tests/test_invariants.py`; hash-pinned `requirements*.lock`; CI with `pip-audit` | ADR 0010 |
 
 ## Workbench UI
 
 `UI/` is a Vite + React app for seeing all of the above. It has a lab that sends real requests and
 replays each one through the pipeline from its trace, plus the policy, ledger, keys, MCP audit,
 every benchmark result, the ADRs and the commit history. It reads a read-only admin API
-(`/v1/sluice/admin/*`, off by default; `admin.enabled` in the policy). `policies/lab.yaml` turns
+(`/v1/sluice/admin/*`, off by default; `admin.enabled` in the policy). That API answers loopback
+clients only, unless `SLUICE_ADMIN_TOKEN` (32+ characters) is set; then it needs that token,
+never a virtual key (ADR 0010). `policies/lab.yaml` turns
 the API on and adds mock routes that fail on purpose. Setup is in [UI/README.md](UI/README.md).
 
 ## Tests and benchmarks
 
 ```bash
 redis-server --port 6399 --save "" &      # optional: the Redis tests skip without it
-.venv/bin/pytest                          # 147 tests, ~4 s
+.venv/bin/pytest                          # 157 tests, ~5 s
 ```
 
 The LiteLLM comparison needs LiteLLM in its own environment (pinned, Python 3.12) and uvloop:
@@ -103,6 +107,11 @@ python3.12 -m venv bench/.venv-litellm && bench/.venv-litellm/bin/pip install "l
 .venv/bin/pip install -e '.[dev,bench]'                   # uvloop + pyinstrument, pinned
 .venv/bin/python bench/compare.py --tag mine && .venv/bin/python bench/compare_report.py mine
 ```
+
+Dependencies are pinned by hash in `requirements.lock` (runtime, used by the Dockerfile) and
+`requirements-dev.lock` (CI). Both are resolved for Python 3.12 on Linux; ADR 0010 has the
+command that regenerates them. CI (`.github/workflows/ci.yml`) runs ruff, the tests with Redis,
+and `pip-audit` on both locks.
 
 ## Layout
 
@@ -114,7 +123,7 @@ src/sluice/   api/ (FastAPI app, SSE)  providers/ (mock, OpenAI-compatible)  rou
 policies/     routes.yaml (local), compose.yaml (docker), lab.yaml (the UI's lab)
 UI/           workbench UI (Vite + React); see UI/README.md
 bench/        load generator, mock upstream, every experiment; results/ holds their output
-docs/         decisions/ (ADRs 0001-0009), learning/ (one note per phase, with questions)
+docs/         decisions/ (ADRs 0001-0010), learning/ (one note per phase, with questions)
 ```
 
 ## Definition of done
@@ -133,7 +142,11 @@ docs/         decisions/ (ADRs 0001-0009), learning/ (one note per phase, with q
 - One OpenAI-compatible adapter. Azure OpenAI and Bedrock (the third Phase 8 item) are not built.
 - Stream resume's `prefill` was measured on Ollama only; some providers don't honour a trailing
   assistant message (ADR 0008).
-- MCP: tools only (no resources/prompts), no rate limits on tool calls (ADR 0009).
+- MCP: tools only (no resources/prompts), no rate limits on tool calls (ADR 0009). Tool
+  definitions aren't pinned yet, so a server can change a tool's description after you grant
+  it. Pin MCP server packages to exact versions in the policy (`npx -y package@1.2.3`, not a
+  bare name).
+- Virtual keys don't expire, and nothing suspends a key that behaves oddly (ADR 0010).
 - The semantic cache is per process. pgvector would share it across replicas; it needs Docker.
 - The cache eval's labels are a first draft (`bench/data/README.md`), and its 9% held-out
   false-hit rate means it's off on the Ollama route.
