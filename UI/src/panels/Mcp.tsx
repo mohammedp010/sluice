@@ -8,7 +8,7 @@ import { ApiProblem, Empty, SkeletonRows, usePoll } from "../components/state";
 const globMatch = (pattern: string, name: string) =>
   new RegExp(`^${pattern.replace(/[.+^${}()|\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".")}$`).test(name);
 
-const OUTCOME_CLS: Record<string, string> = { ok: "ok", denied: "bad", unknown: "warn", error: "bad", tool_error: "warn", quarantined: "bad", pending: "warn" };
+const OUTCOME_CLS: Record<string, string> = { ok: "ok", denied: "bad", unknown: "warn", error: "bad", tool_error: "warn", quarantined: "bad", pending: "warn", egress_blocked: "bad", rate_limited: "warn" };
 const PIN_CLS: Record<string, string> = { approved: "ok", pending: "warn", quarantined: "bad" };
 
 export default function Mcp() {

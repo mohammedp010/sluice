@@ -147,6 +147,14 @@ def admin_router(recent: RecentTraces, token_env: str,
             })
         return out
 
+    @api.get("/security")
+    async def security(request: Request):
+        """The behaviour watch's recent alerts and actions, newest first, and the lockdown flag."""
+        st = request.app.state
+        return {"alerts": list(st.watch.alerts.recent),
+                "paid_off": bool(st.keys and st.keys.flag("paid_off")),
+                "enforce": st.settings.watch.enforce and st.settings.watch.enabled}
+
     @api.get("/mcp")
     async def mcp(request: Request, limit: int = Query(100, ge=1, le=1000)):
         audit = request.app.state.mcp.audit

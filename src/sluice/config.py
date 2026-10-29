@@ -156,6 +156,9 @@ class McpServerConfig(BaseModel):
 class McpConfig(BaseModel):
     servers: dict[str, McpServerConfig] = Field(default_factory=dict)
     audit_db: str | None = None  # default: auth.db_path
+    # Retention (ADR 0012): rows older than this are deleted hourly and checkpointed, so the
+    # hash chain still verifies. None: keep everything.
+    audit_retention_days: float | None = Field(default=None, gt=0)
     # Browsers send Origin; MCP's spec requires checking it (DNS rebinding). CLI clients don't
     # send one. Any Origin not listed here is refused.
     allowed_origins: list[str] = Field(default_factory=list)
@@ -165,6 +168,54 @@ class McpConfig(BaseModel):
     pin_mode: Literal["auto_first", "manual"] = "auto_first"
     tools_ttl_s: float = Field(default=60.0, gt=0)
     lint_max_description: int = Field(default=1024, ge=1)
+
+
+class GuardConfig(BaseModel):
+    """Secret egress guard (ADR 0012). Tool rules map `server__tool` globs to a mode; the first
+    glob that matches wins, and a tool no glob matches is `off`. Findings are logged as type and
+    position, never the value."""
+
+    # off | audit | block: block refuses the call (and C5 suspends the key)
+    tool_args: dict[str, Literal["off", "audit", "block"]] = Field(
+        default_factory=lambda: {"*": "audit"})
+    # off | audit | redact: redact replaces each match with [REDACTED:<type>]
+    tool_results: dict[str, Literal["off", "audit", "redact"]] = Field(
+        default_factory=lambda: {"*": "audit"})
+    # prompts sent upstream: off | audit | block (400 secret_in_prompt)
+    chat: Literal["off", "audit", "block"] = "audit"
+
+    @staticmethod
+    def mode(rules: dict[str, str], tool: str) -> str:
+        import fnmatch
+
+        return next((m for g, m in rules.items() if fnmatch.fnmatchcase(tool, g)), "off")
+
+
+class WatchConfig(BaseModel):
+    """Behaviour watch (ADR 0012): small rules, counted in the shared state so every replica
+    sees the same counts. Suspending is automatic and reversible (`sluice.admin unsuspend-key`);
+    revoking stays human. With `enforce: false` every action becomes an alert."""
+
+    enabled: bool = True
+    enforce: bool = True
+    # R1 probe: refused tool calls (denied, unknown, pending, quarantined) -> suspend the key
+    probe_calls: int = Field(default=10, ge=1)
+    probe_window_s: int = Field(default=300, ge=1)
+    # R2 burn rate: this share of the daily budget spent within the window -> suspend. Keys
+    # without a daily budget use `burn_usd` instead (None: not watched).
+    burn_fraction: float = Field(default=0.5, gt=0, le=1)
+    burn_usd: float | None = 10.0
+    burn_window_s: int = Field(default=600, ge=1)
+    # R3 new network: a key's first request from a /24 (IPv6: /64) unseen for this long -> alert
+    new_network_days: int = Field(default=30, ge=1)
+    # R4 scanner: this many failed key checks from one IP in the window, or one bearer value
+    # that isn't key-shaped (quotes, spaces, SQL) -> refuse that IP for `block_ip_s`
+    scanner_failures: int = Field(default=20, ge=1)
+    scanner_window_s: int = Field(default=60, ge=1)
+    block_ip_s: int = Field(default=900, ge=1)
+    # Alerts also go to this webhook (Slack-compatible JSON), read from the env var named here
+    webhook_env: str = "SLUICE_ALERT_WEBHOOK"
+    recent_alerts: int = Field(default=200, ge=1)  # kept in memory for the admin API
 
 
 class AdminConfig(BaseModel):
@@ -185,6 +236,8 @@ class Settings(BaseModel):
     state: StateConfig = Field(default_factory=StateConfig)
     limits: LimitsConfig = Field(default_factory=LimitsConfig)
     admin: AdminConfig = Field(default_factory=AdminConfig)
+    guard: GuardConfig = Field(default_factory=GuardConfig)
+    watch: WatchConfig = Field(default_factory=WatchConfig)
     providers: dict[str, ProviderConfig]
     routes: dict[str, Route] = Field(default_factory=dict)  # public model name -> target
 

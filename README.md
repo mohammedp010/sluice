@@ -5,7 +5,7 @@ sits between applications and model providers and decides how much traffic flows
 goes, and when to shut it off. It handles keys, rate limits and budgets, retries, fallback and
 circuit breaking, tracing and cost attribution, a semantic cache, cheap-first routing, stream
 resume after a mid-answer failure, an MCP tool proxy with per-key permissions, and hardening
-against the ways AI gateways were attacked in 2026 (ADRs 0010, 0011).
+against the ways AI gateways were attacked in 2026 (ADRs 0010-0012).
 
 **Total spent on LLM APIs: $0.** Every model call in this repo went to a mock upstream or to a
 local Ollama model. Paid providers are blocked unless `SLUICE_ALLOW_PAID=1`, and even then
@@ -53,6 +53,8 @@ other hardware.
 | Bug found by benchmarking | cancelled httpx calls leaked pool slots (22 → 100, then dead); fixed: 0% → 100% success after an overload | `bench/httpx_pool_leak.py` → [httpx-pool-leak.md](bench/results/httpx-pool-leak.md), ADR 0007 |
 | Top profiling hotspot | per-request SQLite commit on the event loop, ~19% of CPU; now batched off the loop | `bench/profile_sluice.py` → [before](bench/results/profile-before-flat.txt) / [after](bench/results/profile-after-flat.txt) |
 | Stream resume after a mid-answer failure | prefill: 30/30 clean (same model), 29/30 (other model); silent restart: 0/30 | `bench/stream_resume_eval.py` → [stream-resume.md](bench/results/stream-resume.md) |
+| Secret egress guard (ADR 0012) | 560/560 generated fake secrets found, 0 false positives in 4.4 MB of real text, ~140 µs/KB; encoded or spaced secrets get through | `bench/egress_eval.py` → [egress-eval.md](bench/results/egress-eval.md) |
+| Behaviour watch (ADR 0012) | stolen key: $23 instead of $40 before suspension; tool probe: 10 guesses; SQLi bearer: blocked on the 1st request; 0 false suspensions in a modelled day of 36k events | `bench/security_eval.py` → [security-eval.md](bench/results/security-eval.md) |
 | MCP tool description lint (ADR 0011) | 1 of 63 real tool descriptions held for review; 19 of 32 poisoned strings flagged, 0 of 9 innocently worded ones | `bench/tool_lint_eval.py` → [tool-lint-eval.md](bench/results/tool-lint-eval.md) |
 
 Where Sluice loses to LiteLLM (providers, admin UI, key management, budgets per team/user,
@@ -84,6 +86,7 @@ Two replicas + Redis + Jaeger: `docker compose up` (policy `policies/compose.yam
 | MCP proxy | `mcp.servers` in the policy; keys get `--tools "server__tool*"` grants; `python -m sluice.report --mcp` | ADR 0009 |
 | Hardening | tool servers never see provider keys; admin API loopback-only or `SLUICE_ADMIN_TOKEN`; every route classified in `tests/test_invariants.py`; hash-pinned `requirements*.lock`; CI with `pip-audit` | ADR 0010 |
 | Key and tool containment | `create-key --ttl 30d --cidrs 10.0.0.0/8`; `rotate-key <id> --grace 24h`; `revoke --team X`; MCP tool definitions pinned, changes quarantined until `sluice.admin tools approve` | ADR 0011 |
+| Watch, egress guard, incident response | rules that suspend a key or block an IP on their own (`watch:`); secrets in tool traffic and prompts audited, blocked or redacted (`guard:`); `tool_rpm`; `sluice.admin lockdown`; hash-chained audit with retention; [runbook](docs/runbook-key-compromise.md) | ADR 0012 |
 
 ## Workbench UI
 
@@ -99,7 +102,7 @@ the API on and adds mock routes that fail on purpose. Setup is in [UI/README.md]
 
 ```bash
 redis-server --port 6399 --save "" &      # optional: the Redis tests skip without it
-.venv/bin/pytest                          # 195 tests, ~10 s
+.venv/bin/pytest                          # 240 tests, ~10 s
 ```
 
 The LiteLLM comparison needs LiteLLM in its own environment (pinned, Python 3.12) and uvloop:
@@ -125,7 +128,7 @@ src/sluice/   api/ (FastAPI app, SSE)  providers/ (mock, OpenAI-compatible)  rou
 policies/     routes.yaml (local), compose.yaml (docker), lab.yaml (the UI's lab)
 UI/           workbench UI (Vite + React); see UI/README.md
 bench/        load generator, mock upstream, every experiment; results/ holds their output
-docs/         decisions/ (ADRs 0001-0011), learning/ (one note per phase, with questions)
+docs/         decisions/ (ADRs 0001-0012), runbook-key-compromise.md, learning/ (one note per phase, with questions)
 ```
 
 ## Definition of done
@@ -144,11 +147,15 @@ docs/         decisions/ (ADRs 0001-0011), learning/ (one note per phase, with q
 - One OpenAI-compatible adapter. Azure OpenAI and Bedrock (the third Phase 8 item) are not built.
 - Stream resume's `prefill` was measured on Ollama only; some providers don't honour a trailing
   assistant message (ADR 0008).
-- MCP: tools only (no resources/prompts), no rate limits on tool calls (ADR 0009). A changed
+- MCP: tools only (no resources/prompts) (ADR 0009). A changed
   tool definition is caught only at the next refresh (60 s by default), and a pin can't see a
   change in behaviour (ADR 0011). Pin MCP server packages to exact versions in the policy
   (`npx -y package@1.2.3`, not a bare name).
-- Nothing suspends a key that behaves oddly yet; suspension is manual (ADR 0011).
+- The behaviour watch's rules are fixed thresholds, and its normal-traffic eval is a model,
+  not real traffic. Start with `watch.enforce: false` if your traffic has big bursts or many
+  clients behind one IP (ADR 0012).
+- The secret guard misses encoded, split or paraphrased secrets, and doesn't scan streamed
+  responses (ADR 0012).
 - The semantic cache is per process. pgvector would share it across replicas; it needs Docker.
 - The cache eval's labels are a first draft (`bench/data/README.md`), and its 9% held-out
   false-hit rate means it's off on the Ollama route.

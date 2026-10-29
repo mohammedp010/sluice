@@ -211,7 +211,8 @@ async def test_gateway_hit_skips_upstream_and_costs_nothing():
     cache = make_cache()
     settings = Settings(providers={"mock": {"type": "mock"}}, routes={"m": {
         "cache": True, "chain": [{"provider": "mock", "upstream_model": "x", "retries": 0,
-                                  "price_in_per_mtok": 1e6, "price_out_per_mtok": 1e6}]}})
+                                  "price_in_per_mtok": 1e6, "price_out_per_mtok": 1e6}]}},
+                        watch={"enabled": False})  # fake prices would trip R2 (burn rate)
     up = CountingMock(text="Paris is the capital.")
     app, raw = make_app(settings, {"mock": up}, key_kw={"team": "search"}, cache=cache)
     async with client_for(app, raw) as c:

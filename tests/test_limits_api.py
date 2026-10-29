@@ -67,7 +67,10 @@ async def test_keys_do_not_leak_into_each_other():
 def priced_settings(**kw):
     route = {"chain": [{"provider": "mock", "upstream_model": "x", "retries": 0,
                         "price_in_per_mtok": 1_000_000, "price_out_per_mtok": 1_000_000}]}
-    return Settings(providers={"mock": {"type": "mock"}}, routes={"m": route}, **kw)
+    # Fake prices drain a budget in seconds, which the watch's burn-rate rule (R2) would
+    # rightly suspend. These tests are about budgets, so it is off here (tests/test_watch.py).
+    return Settings(providers={"mock": {"type": "mock"}}, routes={"m": route},
+                    watch={"enabled": False}, **kw)
 
 
 async def test_budget_exhaustion_blocks_further_calls():
