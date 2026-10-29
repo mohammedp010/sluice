@@ -127,6 +127,12 @@ export interface KeyInfo {
   daily_budget_usd: number | null;
   monthly_budget_usd: number | null;
   revoked: boolean;
+  status: "active" | "suspended" | "revoked";
+  suspended_reason: string | null;
+  expires_at: string | null; // UTC, "YYYY-MM-DD HH:MM:SS"
+  allowed_cidrs: string[];
+  lineage: number;
+  created_at: string;
   spend_today_usd: number;
   spend_month_usd: number;
 }

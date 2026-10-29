@@ -18,6 +18,7 @@ import os
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
+from ..auth.keys import client_ip
 from ..config import Route
 from ..telemetry.ledger import GROUPS
 from ..telemetry.recent import RecentTraces
@@ -42,7 +43,7 @@ def _is_loopback(host: str | None) -> bool:
         return False
 
 
-def admin_guard(token_env: str):
+def admin_guard(token_env: str, trusted_proxies: list | None = None):
     """A dependency that admits a request to the admin API, or raises 401/403."""
     token = os.environ.get(token_env) or None  # read once, like provider keys
     if token is not None and len(token) < MIN_TOKEN_CHARS:
@@ -50,7 +51,10 @@ def admin_guard(token_env: str):
 
     async def check(request: Request) -> None:
         if token is None:
-            if not _is_loopback(request.client.host if request.client else None):
+            # behind a trusted proxy on this host, the peer is loopback but the caller isn't
+            ip = client_ip(request.client.host if request.client else None,
+                           request.headers.get("x-forwarded-for"), trusted_proxies or [])
+            if not _is_loopback(ip):
                 raise HTTPException(403, f"admin API is loopback-only until {token_env} is set")
             return
         auth = request.headers.get("authorization", "")
@@ -62,8 +66,10 @@ def admin_guard(token_env: str):
     return check
 
 
-def admin_router(recent: RecentTraces, token_env: str) -> APIRouter:
-    api = APIRouter(prefix="/v1/sluice/admin", dependencies=[Depends(admin_guard(token_env))])
+def admin_router(recent: RecentTraces, token_env: str,
+                 trusted_proxies: list | None = None) -> APIRouter:
+    api = APIRouter(prefix="/v1/sluice/admin",
+                    dependencies=[Depends(admin_guard(token_env, trusted_proxies))])
 
     @api.get("/overview")
     async def overview(request: Request):
@@ -128,12 +134,15 @@ def admin_router(recent: RecentTraces, token_env: str) -> APIRouter:
             return []
         out = []
         for k, hint in st.keys.list():
-            day, month = await st.shared.spend(k.id)
+            day, month = await st.shared.spend(k.limit_id)  # shared by a rotation
             out.append({
                 "id": k.id, "name": k.name, "team": k.team, "app": k.app, "hint": hint,
                 "allowed_models": k.allowed_models, "allowed_tools": k.allowed_tools,
                 "rpm": k.rpm, "tpm": k.tpm, "daily_budget_usd": k.daily_budget_usd,
                 "monthly_budget_usd": k.monthly_budget_usd, "revoked": k.revoked,
+                "status": k.status, "suspended_reason": k.suspended_reason,
+                "expires_at": k.expires_at, "allowed_cidrs": k.allowed_cidrs,
+                "lineage": k.limit_id, "created_at": k.created_at,
                 "spend_today_usd": day / 1e6, "spend_month_usd": month / 1e6,
             })
         return out

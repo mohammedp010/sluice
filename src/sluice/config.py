@@ -81,6 +81,21 @@ class AuthConfig(BaseModel):
     enabled: bool = True
     db_path: str = "sluice.db"
     max_body_bytes: int = 1_000_000
+    # Lifetime of keys made by `sluice.admin create-key` without --ttl, e.g. "90d". None: never
+    # expire. (ADR 0011)
+    key_ttl: str | None = None
+    # Proxies whose X-Forwarded-For is believed when finding the caller's IP (key CIDR binding,
+    # admin loopback check). Empty: the TCP peer is the caller.
+    trusted_proxies: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _check(self):
+        from .auth.keys import parse_duration, parse_networks
+
+        if self.key_ttl is not None:
+            parse_duration(self.key_ttl)
+        parse_networks(self.trusted_proxies)
+        return self
 
 
 class StateConfig(BaseModel):

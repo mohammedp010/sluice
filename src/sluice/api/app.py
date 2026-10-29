@@ -18,7 +18,7 @@ from opentelemetry import trace
 from opentelemetry.propagate import extract
 from opentelemetry.trace import Span, SpanKind, Status, StatusCode
 
-from ..auth.keys import KeyStore, VirtualKey
+from ..auth.keys import KeyStore, VirtualKey, client_ip, parse_networks
 from ..cache.semantic import CachedAnswer, Probe, SemanticCache
 from ..config import (
     Settings,
@@ -149,13 +149,14 @@ def create_app(
     app.state.executor = executor or Executor(
         app.state.providers, build_breakers(settings), paid_providers=paid, paid_guard=paid_guard,
         tracer=tracer)
+    trusted_proxies = parse_networks(settings.auth.trusted_proxies)
     metrics = Metrics(
         tel.meter(), lambda: {n: b.state.value for n, b in app.state.executor.breakers.items()})
 
     if settings.admin.enabled:  # read-only API for the UI; also keeps the last N traces
         recent = RecentTraces(settings.admin.recent_traces)
         tel.tracer_provider.add_span_processor(recent)
-        app.include_router(admin_router(recent, settings.admin.token_env))
+        app.include_router(admin_router(recent, settings.admin.token_env, trusted_proxies))
 
     @app.middleware("http")
     async def body_size_cap(request: Request, call_next):
@@ -280,11 +281,11 @@ def create_app(
         max_tokens = req.max_tokens or req.max_completion_tokens
         prompt_est = estimate_prompt_tokens(messages)
         est = prompt_est + (max_tokens or settings.limits.default_completion_estimate)
-        tpm_bucket = f"{key.id}:tpm"
+        tpm_bucket = f"{key.limit_id}:tpm"  # per lineage: a rotation shares its limits
 
         with tracer.start_as_current_span("sluice.limits", attributes={"sluice.tokens.estimate": est}):
             # --- 2. budget (checked before the call; in-flight requests can overshoot slightly)
-            day, month = await sh.spend(key.id)
+            day, month = await sh.spend(key.limit_id)
             for spent, cap, label in ((day, key.daily_budget_usd, "daily"),
                                       (month, key.monthly_budget_usd, "monthly")):
                 if cap is not None and spent >= cap * 1_000_000:
@@ -292,7 +293,7 @@ def create_app(
                                   "budget_exceeded")
 
             # --- 3. rate limits: requests/min, then tokens/min (estimated, reconciled later) ---
-            ok, retry = await sh.acquire(f"{key.id}:rpm", key.rpm, key.rpm, 1)
+            ok, retry = await sh.acquire(f"{key.limit_id}:rpm", key.rpm, key.rpm, 1)
             if not ok:
                 return _rate_limited("requests", retry)
             if est > key.tpm:
@@ -314,7 +315,7 @@ def create_app(
                 probe = Probe("skip", "disabled")
             else:
                 probe = await cache.probe(
-                    tenant=key.team or f"key:{key.id}", model=req.model, messages=messages,
+                    tenant=key.team or f"key:{key.limit_id}", model=req.model, messages=messages,
                     temperature=req.temperature, max_tokens=params.max_tokens,
                     cache_control=request.headers.get("cache-control", ""))
             cs.set_attribute("sluice.cache.result", probe.result)
@@ -362,7 +363,7 @@ def create_app(
                             for t, u in bills)
                 log.usage, log.cost_micro = used, micro
                 if micro:
-                    await sh.add_spend(key.id, micro)
+                    await sh.add_spend(key.limit_id, micro)
 
         def billed(c: Completion) -> Usage:
             # upstream reported no usage: bill an estimate, not 0
@@ -513,8 +514,17 @@ def create_app(
     def _authenticate(request: Request) -> VirtualKey | None:
         auth = request.headers.get("authorization", "")
         if not auth.lower().startswith("bearer "):
-            return None
-        return request.app.state.keys.lookup(auth[7:].strip())
+            why = "missing"
+            key = None
+        else:
+            ip = client_ip(request.client.host if request.client else None,
+                           request.headers.get("x-forwarded-for"), trusted_proxies)
+            key, why = request.app.state.keys.check(auth[7:].strip(), ip)
+        # The caller sees one 401 for every reason (ADR 0011); telemetry gets the real one
+        trace.get_current_span().set_attribute("sluice.auth.result", why)
+        if key is None:
+            metrics.auth_rejections.add(1, {"sluice.auth.result": why})
+        return key
 
     return app
 
