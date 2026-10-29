@@ -1,0 +1,30 @@
+# Lint, tests (Redis ones included) and a dependency audit on every push and pull request.
+# Actions are pinned by commit, dependencies by hash (ADR 0010).
+name: ci
+on: [push, pull_request]
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ["6399:6379"]
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: pip install --require-hashes --no-deps -r requirements-dev.lock
+      - run: ruff check src tests bench
+      - run: pytest -q
+      - name: audit locked dependencies for known vulnerabilities
+        run: |
+          pip-audit --disable-pip -r requirements.lock
+          pip-audit --disable-pip -r requirements-dev.lock

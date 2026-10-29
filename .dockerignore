@@ -1,0 +1,7 @@
+# Allowlist: the build context is only what the image needs. Local .env files, sluice.db and
+# anything else in the checkout never reach the Docker daemon (ADR 0010).
+*
+!requirements.lock
+!src/sluice/
+!policies/
+**/__pycache__

@@ -5,6 +5,7 @@ description = "A learn-by-building OpenAI-compatible LLM gateway"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",
+    "starlette>=1.0.1",  # CVE-2026-48710 (Host header auth bypass), via fastapi
     "uvicorn>=0.30",
     "httpx>=0.27",
     "pydantic>=2.7",
@@ -18,7 +19,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-asyncio>=0.24", "openai>=1.40", "ruff>=0.6"]
+dev = ["pytest>=8", "pytest-asyncio>=0.24", "openai>=1.40", "ruff>=0.6",
+       "pip-tools>=7.4", "pip-audit>=2.7"]  # regenerate the locks, audit them (ADR 0010)
 bench = ["uvloop==0.23.0", "pyinstrument==5.1.1"]  # load generator + profiler (Phase 7)
 
 [build-system]
