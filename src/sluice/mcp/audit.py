@@ -56,6 +56,13 @@ class McpAudit:
             names = [d[0] for d in cur.description]
             return [dict(zip(names, r)) for r in cur.fetchall()]
 
+    def outcomes(self, since: str | None = None) -> list[tuple]:
+        """(key_name, tool, outcome, egress) for every call at or after `since` (a ts prefix)."""
+        with self._lock:
+            return [tuple(r) for r in self._db.execute(
+                "SELECT key_name, tool, outcome, egress FROM mcp_audit "
+                "WHERE (? IS NULL OR ts>=?) ORDER BY id", (since, since)).fetchall()]
+
     def summary(self) -> list[tuple]:
         """(key, tool, outcome, calls)"""
         with self._lock:

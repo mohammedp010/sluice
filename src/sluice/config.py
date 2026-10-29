@@ -188,6 +188,33 @@ class GuardConfig(BaseModel):
         return next((m for g, m in rules.items() if fnmatch.fnmatchcase(tool, g)), "off")
 
 
+class WatchConfig(BaseModel):
+    """Behaviour watch (ADR 0012): small rules, counted in the shared state so every replica
+    sees the same counts. Suspending is automatic and reversible (`sluice.admin unsuspend-key`);
+    revoking stays human. With `enforce: false` every action becomes an alert."""
+
+    enabled: bool = True
+    enforce: bool = True
+    # R1 probe: refused tool calls (denied, unknown, pending, quarantined) -> suspend the key
+    probe_calls: int = Field(default=10, ge=1)
+    probe_window_s: int = Field(default=300, ge=1)
+    # R2 burn rate: this share of the daily budget spent within the window -> suspend. Keys
+    # without a daily budget use `burn_usd` instead (None: not watched).
+    burn_fraction: float = Field(default=0.5, gt=0, le=1)
+    burn_usd: float | None = 10.0
+    burn_window_s: int = Field(default=600, ge=1)
+    # R3 new network: a key's first request from a /24 (IPv6: /64) unseen for this long -> alert
+    new_network_days: int = Field(default=30, ge=1)
+    # R4 scanner: this many failed key checks from one IP in the window, or one bearer value
+    # that isn't key-shaped (quotes, spaces, SQL) -> refuse that IP for `block_ip_s`
+    scanner_failures: int = Field(default=20, ge=1)
+    scanner_window_s: int = Field(default=60, ge=1)
+    block_ip_s: int = Field(default=900, ge=1)
+    # Alerts also go to this webhook (Slack-compatible JSON), read from the env var named here
+    webhook_env: str = "SLUICE_ALERT_WEBHOOK"
+    recent_alerts: int = Field(default=200, ge=1)  # kept in memory for the admin API
+
+
 class AdminConfig(BaseModel):
     """Read-only admin API under /v1/sluice/admin (policy, recent traces, ledger, keys without
     secrets, MCP audit) for the UI. Off by default: it shows who spent what. Loopback-only
@@ -207,6 +234,7 @@ class Settings(BaseModel):
     limits: LimitsConfig = Field(default_factory=LimitsConfig)
     admin: AdminConfig = Field(default_factory=AdminConfig)
     guard: GuardConfig = Field(default_factory=GuardConfig)
+    watch: WatchConfig = Field(default_factory=WatchConfig)
     providers: dict[str, ProviderConfig]
     routes: dict[str, Route] = Field(default_factory=dict)  # public model name -> target
 

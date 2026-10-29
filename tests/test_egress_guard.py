@@ -90,8 +90,10 @@ def test_first_matching_glob_wins():
 
 
 def mcp_guarded(**guard):
+    # the watch is off: R5 would suspend the key on a block (tests/test_watch.py covers that)
     settings = Settings(providers={"mock": {"type": "mock"}}, routes={"m": ROUTE},
-                        mcp={"servers": {"demo": {"command": SERVER}}}, guard=guard)
+                        mcp={"servers": {"demo": {"command": SERVER}}}, guard=guard,
+                        watch={"enabled": False})
     return make_app(settings, key_kw={"allowed_tools": ["demo__*"]})
 
 

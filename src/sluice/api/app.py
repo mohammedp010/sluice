@@ -30,6 +30,7 @@ from ..config import (
     load_settings,
 )
 from ..guard.secrets import scan
+from ..guard.watch import KEY_SHAPED, Watch
 from ..limits.estimate import cost_micro_usd, estimate_prompt_tokens
 from ..limits.state import SharedState
 from ..mcp.audit import McpAudit
@@ -56,7 +57,7 @@ from .admin import admin_router
 from .schemas import ChatCompletionRequest
 
 DEFAULT_POLICY = "policies/routes.yaml"
-ANON = VirtualKey(id=0, name="anonymous", rpm=10**9, tpm=10**12)  # used only if auth is disabled
+ANON = VirtualKey(id=0, name="anonymous", rpm=10**9, tpm=10**12, tool_rpm=10**9)  # used only if auth is disabled
 
 
 @dataclass
@@ -147,6 +148,9 @@ def create_app(
         """Kill switch for real-money providers: explicit opt-in AND a daily call cap."""
         if os.environ.get("SLUICE_ALLOW_PAID") != "1":
             return False
+        keys = app.state.keys
+        if keys is not None and await asyncio.to_thread(keys.flag, "paid_off"):
+            return False  # `sluice.admin lockdown` (ADR 0012)
         return await app.state.shared.incr_paid_calls() <= settings.limits.paid_daily_call_cap
 
     app.state.executor = executor or Executor(
@@ -155,8 +159,10 @@ def create_app(
     trusted_proxies = parse_networks(settings.auth.trusted_proxies)
     metrics = Metrics(
         tel.meter(), lambda: {n: b.state.value for n, b in app.state.executor.breakers.items()})
+    watch = app.state.watch = Watch(settings.watch, app.state.shared, app.state.keys, metrics)
     app.state.mcp = McpProxy(upstreams, mcp_audit or McpAudit(
-        mc.audit_db or settings.auth.db_path), tracer, settings.guard, metrics)
+        mc.audit_db or settings.auth.db_path), tracer, settings.guard, metrics, watch,
+        app.state.shared)
 
     if settings.admin.enabled:  # read-only API for the UI; also keeps the last N traces
         recent = RecentTraces(settings.admin.recent_traces)
@@ -204,7 +210,7 @@ def create_app(
         if version and version not in SUPPORTED:
             return _error(400, f"Unsupported MCP protocol version {version}",
                           "unsupported_protocol_version")
-        key = _authenticate(request) if settings.auth.enabled else ANON
+        key = (await _authenticate(request)) if settings.auth.enabled else ANON
         if key is None:
             return _error(401, "Invalid or missing API key", "invalid_api_key",
                           {"WWW-Authenticate": "Bearer"})
@@ -224,7 +230,7 @@ def create_app(
     async def list_models(request: Request):
         # Needs a key, like OpenAI's, and lists only what that key may use: route and provider
         # names are a map for anyone probing the port. (ADR 0010)
-        key = _authenticate(request) if settings.auth.enabled else ANON
+        key = (await _authenticate(request)) if settings.auth.enabled else ANON
         if key is None:
             return _error(401, "Invalid or missing API key", "invalid_api_key",
                           {"WWW-Authenticate": "Bearer"})
@@ -267,7 +273,7 @@ def create_app(
     async def handle(req: ChatCompletionRequest, request: Request, log: RequestLog) -> Response:
         # --- 1. who is calling? -------------------------------------------------------------
         with tracer.start_as_current_span("sluice.auth"):
-            key = _authenticate(request) if settings.auth.enabled else ANON
+            key = (await _authenticate(request)) if settings.auth.enabled else ANON
         if key is None:
             return _error(401, "Invalid or missing API key", "invalid_api_key",
                           {"WWW-Authenticate": "Bearer"})
@@ -385,6 +391,7 @@ def create_app(
                 log.usage, log.cost_micro = used, micro
                 if micro:
                     await sh.add_spend(key.limit_id, micro)
+                    await watch.spent(key, micro)  # R2 burn rate (ADR 0012)
 
         def billed(c: Completion) -> Usage:
             # upstream reported no usage: bill an estimate, not 0
@@ -532,19 +539,29 @@ def create_app(
                 cost_micro_usd=log.cost_micro, latency_ms=round(secs * 1000, 1))
         span.end()
 
-    def _authenticate(request: Request) -> VirtualKey | None:
+    async def _authenticate(request: Request) -> VirtualKey | None:
         auth = request.headers.get("authorization", "")
-        if not auth.lower().startswith("bearer "):
+        # an empty "Bearer " is no key, not a probe (load balancers send it)
+        bearer = (auth[7:].strip() or None) if auth.lower().startswith("bearer ") else None
+        ip = client_ip(request.client.host if request.client else None,
+                       request.headers.get("x-forwarded-for"), trusted_proxies)
+        key = None
+        if await watch.ip_blocked(ip):  # R4 (ADR 0012)
+            why = "ip_blocked"
+        elif bearer is None:
             why = "missing"
-            key = None
+        elif not KEY_SHAPED.fullmatch(bearer):
+            why = "malformed"  # quotes, spaces, SQL: never sent to the key lookup at all
         else:
-            ip = client_ip(request.client.host if request.client else None,
-                           request.headers.get("x-forwarded-for"), trusted_proxies)
-            key, why = request.app.state.keys.check(auth[7:].strip(), ip)
+            key, why = request.app.state.keys.check(bearer, ip)
         # The caller sees one 401 for every reason (ADR 0011); telemetry gets the real one
         trace.get_current_span().set_attribute("sluice.auth.result", why)
         if key is None:
             metrics.auth_rejections.add(1, {"sluice.auth.result": why})
+            if why != "ip_blocked":
+                await watch.auth_failed(ip, why, bearer)
+        else:
+            await watch.seen_from(key, ip)  # R3
         return key
 
     return app

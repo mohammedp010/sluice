@@ -74,3 +74,19 @@ async def test_spend_and_paid_counter(state):
     await state.add_spend(1, 500)
     assert await state.spend(1) == (3000, 3000) and await state.spend(2) == (0, 0)
     assert [await state.incr_paid_calls() for _ in range(3)] == [1, 2, 3]
+
+
+async def test_window_count_and_marks(state):
+    assert [await state.count("w", 1, 60) for _ in range(3)] == [1, 2, 3]
+    assert await state.count("w", 5, 60) == 8 and await state.count("other", 1, 60) == 1
+    assert await state.mark("m", 60) and not await state.mark("m", 60)
+    assert await state.marked("m") and not await state.marked("nope")
+
+
+async def test_windows_expire():
+    now = [1000.0]
+    s = MemoryState(clock=lambda: now[0])
+    await s.count("w", 3, 60)
+    await s.mark("m", 60)
+    now[0] += 61
+    assert await s.count("w", 1, 60) == 1 and not await s.marked("m") and await s.mark("m", 60)

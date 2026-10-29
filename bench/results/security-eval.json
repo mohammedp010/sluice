@@ -1,0 +1,87 @@
+{
+ "a1_llmjacking": {
+  "watch on": {
+   "served": 58,
+   "usd": 23.2,
+   "seconds": 5.9,
+   "budget_usd": 50.0,
+   "stopped_by": "R2_burn_rate",
+   "alerts": [
+    "R3_new_network",
+    "R3_new_network",
+    "R2_burn_rate"
+   ]
+  },
+  "watch off": {
+   "served": 100,
+   "usd": 40.0,
+   "seconds": 10.1,
+   "budget_usd": 50.0,
+   "stopped_by": "budget_exceeded",
+   "alerts": []
+  }
+ },
+ "a2_tool_probe": {
+  "guesses_answered": 10,
+  "seconds": 2.2,
+  "suspended": true,
+  "probe_calls_rule": 10
+ },
+ "a3_auth_probe": {
+  "sqli": {
+   "requests_until_block": 1,
+   "real_key_same_ip": 401,
+   "real_key_other_ip": 200
+  },
+  "key_guessing": {
+   "requests_until_block": 20,
+   "real_key_same_ip": 401,
+   "real_key_other_ip": 200
+  }
+ },
+ "a4_exfil": {
+  "results": [
+   200,
+   "error",
+   401,
+   401
+  ],
+  "forwarded_with_secret": 0,
+  "suspended": true,
+  "audit_holds_secret": false
+ },
+ "normal_day": {
+  "events": 35811,
+  "keys": 40,
+  "false_suspensions": [],
+  "ip_blocks": [],
+  "new_network_alerts": 200,
+  "alerts_total": 200
+ },
+ "overhead": {
+  "memory": {
+   "guards off": {
+    "p50_ms": 0.736,
+    "p99_ms": 0.962,
+    "n": 1800
+   },
+   "guards on": {
+    "p50_ms": 0.762,
+    "p99_ms": 1.154,
+    "n": 1800
+   }
+  },
+  "redis": {
+   "guards off": {
+    "p50_ms": 1.852,
+    "p99_ms": 9.852,
+    "n": 1800
+   },
+   "guards on": {
+    "p50_ms": 2.281,
+    "p99_ms": 23.542,
+    "n": 1800
+   }
+  }
+ }
+}

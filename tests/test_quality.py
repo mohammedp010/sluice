@@ -38,7 +38,8 @@ def auto_app(cheap_text="Paris.", strong=None, **key_kw):
             "chain": [{"provider": "cheap", "upstream_model": "small", "retries": 0,
                        "price_in_per_mtok": 1e6, "price_out_per_mtok": 1e6}],
             "escalate": {"chain": [{"provider": "strong", "upstream_model": "big", "retries": 0,
-                                    "price_in_per_mtok": 1e7, "price_out_per_mtok": 1e7}]}}})
+                                    "price_in_per_mtok": 1e7, "price_out_per_mtok": 1e7}]}}},
+        watch={"enabled": False})  # fake prices would trip R2 (burn rate)
     cheap = MockProvider("cheap", text=cheap_text)
     strong = strong or MockProvider("strong", text="Canberra is the capital.")
     return make_app(settings, {"cheap": cheap, "strong": strong}, key_kw=key_kw or None)

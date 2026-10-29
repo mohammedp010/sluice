@@ -16,6 +16,10 @@ Tool pinning (pins.py, ADR 0011): a tool whose definition changed since it was t
 Egress guard (guard/secrets.py, ADR 0012): arguments are scanned for secrets before they are
 forwarded (audit or block, per tool glob), and results before they are returned (audit or
 redact). The audit row records each finding's type and position, never the value.
+
+Behaviour watch (guard/watch.py, ADR 0012): tools/call is rate limited per key (`tool_rpm`,
+shared across replicas like the chat limits). Refused calls feed rule R1 (probing) and blocked
+egress feeds R5; both suspend the key.
 """
 from __future__ import annotations
 
@@ -33,6 +37,7 @@ from .upstream import UpstreamDown, Upstreams
 SUPPORTED = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"]  # newest first
 PARSE_ERROR, INVALID_REQUEST, METHOD_NOT_FOUND, INVALID_PARAMS, INTERNAL = (
     -32700, -32600, -32601, -32602, -32603)
+RATE_LIMITED = -32029  # implementation-defined server error range (-32000 to -32099)
 
 
 def rpc_error(id_, code: int, message: str) -> dict:
@@ -45,12 +50,14 @@ def _result(id_, result: dict) -> dict:
 
 class McpProxy:
     def __init__(self, upstreams: Upstreams, audit: McpAudit, tracer,
-                 guard: GuardConfig | None = None, metrics=None):
+                 guard: GuardConfig | None = None, metrics=None, watch=None, shared=None):
         self.up = upstreams
         self.audit = audit
         self.tracer = tracer
         self.guard = guard or GuardConfig()
         self.metrics = metrics
+        self.watch = watch
+        self.shared = shared
 
     def _seen(self, span, where: str, action: str, found: list[Finding]) -> list[dict]:
         briefs = [{"where": where, **f.brief()} for f in found]
@@ -122,7 +129,16 @@ class McpProxy:
                 outcome = ("unknown" if name not in known else "denied"
                            if not key.allows_tool(name) else self.up.pins.status(name))
                 await done(outcome)  # denied, unknown, pending or quarantined
+                if self.watch:
+                    await self.watch.tool_refused(key, outcome)  # R1
                 return rpc_error(id_, INVALID_PARAMS, f"Unknown tool: {name}")  # same for all
+            if self.shared is not None:
+                ok, retry = await self.shared.acquire(
+                    f"{key.limit_id}:tool_rpm", key.tool_rpm, key.tool_rpm, 1)
+                if not ok:
+                    await done("rate_limited")
+                    return rpc_error(id_, RATE_LIMITED, f"Tool calls rate limited: "
+                                     f"{key.tool_rpm}/min; retry in {retry:.1f}s")
             mode = GuardConfig.mode(self.guard.tool_args, name)
             found = scan_json(args) if mode != "off" else []
             if found:
@@ -130,6 +146,8 @@ class McpProxy:
                 if mode == "block":
                     await done("egress_blocked")
                     kinds = ", ".join(sorted({f.type for f in found}))
+                    if self.watch:
+                        await self.watch.egress_blocked(key, name, sorted({f.type for f in found}))
                     return rpc_error(id_, INVALID_PARAMS,
                                      f"Tool call blocked: the arguments contain a secret ({kinds})")
             try:

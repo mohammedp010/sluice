@@ -25,7 +25,7 @@ ROUTES = {
     ("/mcp", "DELETE"): "refused",
     **{(f"/v1/sluice/admin{p}", "GET"): "admin" for p in (
         "/overview", "/traces", "/traces/{trace_id}", "/ledger", "/ledger/summary", "/keys",
-        "/mcp")},
+        "/mcp", "/security")},
 }
 # Request fields that would let a caller choose where, or as whom, the gateway calls out
 STEERING = {"api_base", "base_url", "url", "api_key", "provider", "command", "args", "env",

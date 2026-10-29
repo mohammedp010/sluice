@@ -102,6 +102,9 @@ class Metrics:
         self.guard_findings = meter.create_counter(
             "sluice.guard.findings", "{finding}",
             "Secrets seen in traffic, by where (tool_args, tool_results, chat), type and action")
+        self.security_events = meter.create_counter(
+            "sluice.security.events", "{event}",
+            "Behaviour watch: rule fired, by rule and action (alert, suspend, block_ip)")
         self.auth_rejections = meter.create_counter(
             "sluice.auth.rejections", "{request}",
             "Requests refused at the key check, by reason (missing, unknown, expired, ...)")

@@ -46,6 +46,7 @@ def main(argv=None):
                    help='MCP tools as server__tool globs, comma-separated (e.g. "files__read_*")')
     c.add_argument("--ttl", help="lifetime, e.g. 30d or 12h (default: the policy's auth.key_ttl)")
     c.add_argument("--no-expiry", action="store_true", help="never expire, whatever the policy")
+    c.add_argument("--tool-rpm", type=int, default=60, help="MCP tool calls per minute")
     c.add_argument("--cidrs", default="",
                    help="networks the key may be used from, comma-separated (e.g. 10.0.0.0/8)")
     sub.add_parser("list-keys")
@@ -64,6 +65,11 @@ def main(argv=None):
     s.add_argument("--reason", default="manual")
     u = sub.add_parser("unsuspend-key")
     u.add_argument("id", type=int)
+    lk = sub.add_parser("lockdown", help="incident step 1: suspend every key in scope; without "
+                        "--team, also turn paid providers off on every replica")
+    lk.add_argument("--team")
+    lk.add_argument("--lift", action="store_true",
+                    help="undo: unsuspend what lockdown suspended (other suspensions stay)")
     t = sub.add_parser("tools", help="MCP tool pins: list, diff and approve (ADR 0011)")
     tsub = t.add_subparsers(dest="tcmd", required=True)
     tsub.add_parser("list")
@@ -91,7 +97,8 @@ def main(argv=None):
         ttl = None if a.no_expiry else parse_duration(a.ttl) if a.ttl else default_ttl
         raw, k = store.create(
             a.name, a.team, a.app, a.models.split(","), a.rpm, a.tpm, a.daily_budget, a.monthly_budget,
-            [t for t in a.tools.split(",") if t], ttl, [n for n in a.cidrs.split(",") if n])
+            [t for t in a.tools.split(",") if t], ttl, [n for n in a.cidrs.split(",") if n],
+            tool_rpm=a.tool_rpm)
         print(f"id={k.id}  name={k.name}  expires={k.expires_at or 'never'} UTC"
               f"\nkey (shown once): {raw}")
     elif a.cmd == "list-keys":
@@ -119,9 +126,24 @@ def main(argv=None):
               f"\nkey (shown once): {raw}\nold key #{a.id} works until {old.expires_at} UTC"
               f"{_state(old)}")
     elif a.cmd == "suspend-key":
-        print("suspended" if store.suspend(a.id, a.reason) else "no such key, or it is revoked")
+        print("suspended" if store.suspend(a.id, a.reason) else "no such key, or it isn't active")
     elif a.cmd == "unsuspend-key":
         print("active" if store.unsuspend(a.id) else "no such key, or it isn't suspended")
+    elif a.cmd == "lockdown":
+        scope = f"team {a.team}" if a.team else "all teams"
+        if a.lift:
+            n = store.unsuspend_many("lockdown", a.team)
+            if not a.team:
+                store.set_flag("paid_off", None)
+            print(f"lockdown lifted for {scope}: {n} key(s) active again"
+                  + ("; paid providers follow SLUICE_ALLOW_PAID again" if not a.team else ""))
+        else:
+            n = store.suspend_many("lockdown", a.team)
+            if not a.team:
+                store.set_flag("paid_off", "lockdown")
+            print(f"lockdown for {scope}: {n} key(s) suspended"
+                  + ("; paid providers off" if not a.team else "")
+                  + ". Next: revoke the provider keys at the provider (docs/runbook-key-compromise.md)")
 
 
 def tools(pins, a) -> None:

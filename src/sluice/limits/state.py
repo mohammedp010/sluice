@@ -27,6 +27,11 @@ class SharedState(Protocol):
     async def spend(self, key_id: int) -> tuple[int, int]: ...  # (today, this month) micro-USD
     async def add_spend(self, key_id: int, micro_usd: int) -> None: ...
     async def incr_paid_calls(self) -> int: ...  # today's count, after incrementing
+    # Behaviour watch (ADR 0012). A fixed window: the count resets `window_s` after its first
+    # event, so a burst across a boundary can split in two. Good enough for thresholds.
+    async def count(self, name: str, by: int, window_s: int) -> int: ...
+    async def mark(self, name: str, ttl_s: int) -> bool: ...  # True if it wasn't set already
+    async def marked(self, name: str) -> bool: ...
     async def aclose(self) -> None: ...
 
 
@@ -41,6 +46,7 @@ class MemoryState:
         self._buckets: dict[str, tuple[float, float]] = {}  # name -> (tokens, last_ts)
         self._spend: dict[str, int] = {}
         self._paid: dict[str, int] = {}
+        self._windows: dict[str, tuple[int, float]] = {}  # name -> (value, expires_at)
 
     async def acquire(self, bucket, capacity, per_minute, cost) -> Acquire:
         rate = per_minute / 60
@@ -71,6 +77,27 @@ class MemoryState:
         d, _ = _periods(self._clock())
         self._paid[d] = self._paid.get(d, 0) + 1
         return self._paid[d]
+
+    def _live(self, name: str) -> tuple[int, float] | None:
+        v = self._windows.get(name)
+        if v is not None and v[1] <= self._clock():
+            del self._windows[name]
+            return None
+        return v
+
+    async def count(self, name, by, window_s):
+        value, exp = self._live(name) or (0, self._clock() + window_s)
+        self._windows[name] = (value + by, exp)
+        return value + by
+
+    async def mark(self, name, ttl_s):
+        if self._live(name):
+            return False
+        self._windows[name] = (1, self._clock() + ttl_s)
+        return True
+
+    async def marked(self, name):
+        return self._live(name) is not None
 
     async def aclose(self):
         return None
@@ -148,6 +175,19 @@ class RedisState:
         n = await self._r.incr(k)
         await self._r.expire(k, 2 * 86400)
         return int(n)
+
+    async def count(self, name, by, window_s):
+        k = f"{self.PREFIX}win:{name}"
+        async with self._r.pipeline(transaction=True) as p:
+            p.incrby(k, by).expire(k, window_s, nx=True)  # the window starts at the first event
+            n, _ = await p.execute()
+        return int(n)
+
+    async def mark(self, name, ttl_s):
+        return bool(await self._r.set(f"{self.PREFIX}win:{name}", 1, ex=ttl_s, nx=True))
+
+    async def marked(self, name):
+        return bool(await self._r.exists(f"{self.PREFIX}win:{name}"))
 
     async def aclose(self):
         await self._r.aclose()

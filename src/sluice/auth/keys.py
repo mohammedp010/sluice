@@ -74,6 +74,7 @@ class VirtualKey:
     allowed_tools: list[str] = field(default_factory=list)
     rpm: int = 60
     tpm: int = 20_000
+    tool_rpm: int = 60  # MCP tools/call per minute (ADR 0012)
     daily_budget_usd: float | None = None
     monthly_budget_usd: float | None = None
     status: str = "active"  # active | suspended | revoked
@@ -132,6 +133,11 @@ class KeyStore:
                             "lineage INTEGER"):
                     self._db.execute(f"ALTER TABLE keys ADD COLUMN {ddl}")
                 self._db.execute("UPDATE keys SET status='revoked' WHERE revoked=1")
+            if "tool_rpm" not in cols:  # before the behaviour watch (ADR 0012)
+                self._db.execute("ALTER TABLE keys ADD COLUMN tool_rpm INTEGER NOT NULL DEFAULT 60")
+            # gateway-wide switches the CLI flips and every replica reads (e.g. lockdown)
+            self._db.execute(
+                "CREATE TABLE IF NOT EXISTS flags (name TEXT PRIMARY KEY, value TEXT NOT NULL)")
 
     @staticmethod
     def _row(r: sqlite3.Row) -> VirtualKey:
@@ -142,7 +148,7 @@ class KeyStore:
             daily_budget_usd=r["daily_budget_usd"], monthly_budget_usd=r["monthly_budget_usd"],
             status=r["status"], suspended_reason=r["suspended_reason"],
             expires_at=r["expires_at"], allowed_cidrs=json.loads(r["allowed_cidrs"]),
-            lineage=r["lineage"], created_at=r["created_at"],
+            lineage=r["lineage"], created_at=r["created_at"], tool_rpm=r["tool_rpm"],
         )
 
     def create(
@@ -150,7 +156,7 @@ class KeyStore:
         rpm: int = 60, tpm: int = 20_000, daily_budget_usd: float | None = None,
         monthly_budget_usd: float | None = None, allowed_tools: list[str] | None = None,
         ttl_s: int | None = None, allowed_cidrs: list[str] | None = None,
-        lineage: int | None = None, now: float | None = None,
+        lineage: int | None = None, now: float | None = None, tool_rpm: int = 60,
     ) -> tuple[str, VirtualKey]:
         """Returns (raw_key, record). The raw key is shown once and never stored."""
         now = time.time() if now is None else now
@@ -160,11 +166,11 @@ class KeyStore:
             cur = self._db.execute(
                 "INSERT INTO keys (key_hash,key_hint,name,team,app,allowed_models,rpm,tpm,"
                 "daily_budget_usd,monthly_budget_usd,allowed_tools,expires_at,allowed_cidrs,"
-                "lineage,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "lineage,created_at,tool_rpm) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (hash_key(raw), raw[-4:], name, team, app, json.dumps(allowed_models or ["*"]),
                  rpm, tpm, daily_budget_usd, monthly_budget_usd,
                  json.dumps(allowed_tools or []), _ts(now + ttl_s) if ttl_s else None,
-                 json.dumps(cidrs), lineage, _ts(now)),
+                 json.dumps(cidrs), lineage, _ts(now), tool_rpm),
             )
             row = self._db.execute("SELECT * FROM keys WHERE id=?", (cur.lastrowid,)).fetchone()
         return raw, self._row(row)
@@ -217,11 +223,39 @@ class KeyStore:
                 (team, team, created_before, created_before)).rowcount
 
     def suspend(self, key_id: int, reason: str) -> bool:
-        """Reversible: `unsuspend` restores the key as it was. A revoked key stays revoked."""
+        """Reversible: `unsuspend` restores the key as it was. Only an active key: a revoked
+        key stays revoked, and a suspended one keeps its first reason."""
         with self._lock, self._db:
             return self._db.execute(
                 "UPDATE keys SET status='suspended', suspended_reason=? "
-                "WHERE id=? AND status!='revoked'", (reason, key_id)).rowcount > 0
+                "WHERE id=? AND status='active'", (reason, key_id)).rowcount > 0
+
+    def suspend_many(self, reason: str, team: str | None = None) -> int:
+        """Suspend every active key (in `team`, if given). Returns how many."""
+        with self._lock, self._db:
+            return self._db.execute(
+                "UPDATE keys SET status='suspended', suspended_reason=? "
+                "WHERE status='active' AND (? IS NULL OR team=?)", (reason, team, team)).rowcount
+
+    def unsuspend_many(self, reason: str, team: str | None = None) -> int:
+        """Lift suspensions made for `reason` (in `team`, if given); others stay."""
+        with self._lock, self._db:
+            return self._db.execute(
+                "UPDATE keys SET status='active', suspended_reason=NULL WHERE status='suspended'"
+                " AND suspended_reason=? AND (? IS NULL OR team=?)", (reason, team, team)).rowcount
+
+    def flag(self, name: str) -> str | None:
+        with self._lock:
+            row = self._db.execute("SELECT value FROM flags WHERE name=?", (name,)).fetchone()
+        return row[0] if row else None
+
+    def set_flag(self, name: str, value: str | None) -> None:
+        with self._lock, self._db:
+            if value is None:
+                self._db.execute("DELETE FROM flags WHERE name=?", (name,))
+            else:
+                self._db.execute("INSERT OR REPLACE INTO flags (name, value) VALUES (?, ?)",
+                                 (name, value))
 
     def unsuspend(self, key_id: int) -> bool:
         with self._lock, self._db:
@@ -245,7 +279,7 @@ class KeyStore:
         raw, new = self.create(
             old.name, old.team, old.app, old.allowed_models, old.rpm, old.tpm,
             old.daily_budget_usd, old.monthly_budget_usd, old.allowed_tools,
-            ttl_s or default_ttl_s, old.allowed_cidrs, old.limit_id, now)
+            ttl_s or default_ttl_s, old.allowed_cidrs, old.limit_id, now, old.tool_rpm)
         end = _ts(now + grace_s)
         with self._lock, self._db:
             self._db.execute(
