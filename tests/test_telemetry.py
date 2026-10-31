@@ -189,7 +189,7 @@ async def test_ledger_buffers_writes_and_flushes_in_background():
 
     import pytest
 
-    from sluice.telemetry.ledger import UsageLedger
+    from sluice.telemetry.ledger import COLUMNS, MAX_PENDING, UsageLedger
 
     led = UsageLedger(":memory:")
     led.record(trace_id="a", status=200)
@@ -216,3 +216,10 @@ async def test_ledger_buffers_writes_and_flushes_in_background():
         led.flush()
     led._db = real
     assert led.flush() == 1  # the failed row was kept and written on retry
+
+    led._db = sqlite3.connect(":memory:")
+    for _ in range(3):
+        led._pending += [(None,) * len(COLUMNS)] * (MAX_PENDING // 2)
+        with pytest.raises(sqlite3.Error):
+            led.flush()
+    assert len(led._pending) == MAX_PENDING  # a long outage can't grow the buffer without bound

@@ -5,6 +5,7 @@ Fake secrets are built at runtime, so no secret-shaped string sits in the repo."
 import json
 import random
 import string
+import time
 
 import pytest
 from conftest import ROUTE, client_for, make_app
@@ -53,6 +54,14 @@ def test_each_format_is_found_with_its_position(kind):
     assert [f.type for f in found] == [kind]
     f = found[0]
     assert secret.endswith(text[f.start:f.end]) or text[f.start:f.end] in secret
+
+
+def test_many_findings_scan_in_linear_time():
+    # was quadratic: 420 KB of keys took 5.5 s on the event loop; a 1 MB body would stall ~30 s
+    text = "AKIAABCDEFGHIJKLMNOP " * 20_000
+    t0 = time.perf_counter()
+    assert len(scan(text)) == 20_000
+    assert time.perf_counter() - t0 < 1.0
 
 
 def test_benign_text_is_quiet():

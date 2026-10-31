@@ -348,7 +348,8 @@ def create_app(
                 probe = await cache.probe(
                     tenant=key.team or f"key:{key.limit_id}", model=req.model, messages=messages,
                     temperature=req.temperature, max_tokens=params.max_tokens,
-                    cache_control=request.headers.get("cache-control", ""))
+                    cache_control=request.headers.get("cache-control", ""),
+                    response_format=req.response_format)
             cs.set_attribute("sluice.cache.result", probe.result)
             if probe.reason:
                 cs.set_attribute("sluice.cache.reason", probe.reason)
@@ -557,7 +558,8 @@ def create_app(
         elif not KEY_SHAPED.fullmatch(bearer):
             why = "malformed"  # quotes, spaces, SQL: never sent to the key lookup at all
         else:
-            key, why = request.app.state.keys.check(bearer, ip)
+            # SQLite behind a file lock shared with the other replica: keep it off the event loop
+            key, why = await asyncio.to_thread(request.app.state.keys.check, bearer, ip)
         # The caller sees one 401 for every reason (ADR 0011); telemetry gets the real one
         trace.get_current_span().set_attribute("sluice.auth.result", why)
         if key is None:

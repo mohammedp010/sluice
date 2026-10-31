@@ -143,14 +143,16 @@ class Executor:
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
                     raise AllProvidersFailed(trail, last)
-                if target.provider in self.paid_providers and not (
-                    self._paid_guard and await self._paid_guard()
-                ):
-                    self._skip(trail, target.provider, "skipped_paid_guard")
-                    break  # money kill switch: behaves like an open breaker
                 if not breaker.allow():
                     self._skip(trail, target.provider, "skipped_open")
                     break  # next target
+                # after the breaker: a skipped call must not count against the daily paid cap
+                if target.provider in self.paid_providers and not (
+                    self._paid_guard and await self._paid_guard()
+                ):
+                    breaker.release()  # no call made: free a half-open probe slot
+                    self._skip(trail, target.provider, "skipped_paid_guard")
+                    break  # money kill switch: behaves like an open breaker
                 result, err = await self._attempt(call, target, tparams, n, remaining, trail)
                 if err is None:
                     breaker.record_success()

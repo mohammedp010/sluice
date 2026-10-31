@@ -157,3 +157,21 @@ async def test_upstream_auth_error_fails_over_instead_of_reaching_client():
     c, trail = await ex.complete(route, PARAMS)
     assert c.content == "from b" and [x.provider for x in trail.attempts] == ["a", "b"]
     assert ex.breakers["a"].state is State.OPEN
+
+
+async def test_open_breaker_does_not_use_up_the_paid_daily_cap():
+    calls = []
+
+    async def paid_guard():
+        calls.append(1)
+        return len(calls) <= 50
+
+    a = MockProvider("a", error_rate=1.0)
+    breakers = {"a": CircuitBreaker(1, 3600)}
+    ex = Executor({"a": a}, breakers, sleep=no_sleep, paid_providers=frozenset({"a"}),
+                  paid_guard=paid_guard)
+    route = Route(chain=[{"provider": "a", "upstream_model": "m", "retries": 0}])
+    for _ in range(60):
+        with pytest.raises(AllProvidersFailed):
+            await ex.complete(route, PARAMS)
+    assert len(calls) == 1  # one real call opened the breaker; the 59 skips never counted

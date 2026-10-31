@@ -5,6 +5,7 @@ must match exactly, and goes into the scope:
   tenant (team, else key)  -- never serve one tenant's answer to another
   public model             -- a cheaper model's answer isn't the stronger model's
   temperature, max_tokens  -- different sampling and length make a different answer
+  response_format          -- a JSON-mode request must never get a prose answer
   every earlier message    -- includes the system prompt; same question in another conversation
                               isn't the same question
 A cache is only worth having if its false hits are rare: a miss costs one upstream call, a
@@ -80,14 +81,15 @@ class SemanticCache:
 
     @staticmethod
     def scope(tenant: str, model: str, temperature: float | None, max_tokens: int | None,
-              history: list[Message]) -> str:
+              history: list[Message], response_format: dict | None = None) -> str:
         raw = json.dumps([tenant, model, temperature, max_tokens,
-                          [[m.role, m.content] for m in history]])
+                          [[m.role, m.content] for m in history], response_format],
+                         sort_keys=True)
         return hashlib.sha256(raw.encode()).hexdigest()
 
     async def probe(self, *, tenant: str, model: str, messages: list[Message],
                     temperature: float | None, max_tokens: int | None,
-                    cache_control: str = "") -> Probe:
+                    cache_control: str = "", response_format: dict | None = None) -> Probe:
         cc = {d.strip().lower() for d in cache_control.split(",")}
         may_read, may_store = "no-cache" not in cc, "no-store" not in cc
         if not (may_read or may_store):
@@ -96,7 +98,7 @@ class SemanticCache:
             return Probe("skip", "temperature")  # the client asked for varied answers
         if messages[-1].role != "user":
             return Probe("skip", "not_user_turn")
-        scope = self.scope(tenant, model, temperature, max_tokens, messages[:-1])
+        scope = self.scope(tenant, model, temperature, max_tokens, messages[:-1], response_format)
         try:
             vec = (await self.embedder.embed([messages[-1].content]))[0]
         except Exception:  # noqa: BLE001 -- the cache is an optimisation: fail open, never fail the request

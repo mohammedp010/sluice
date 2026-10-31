@@ -23,6 +23,8 @@ COLUMNS = ("ts", "trace_id", "key_id", "key_name", "team", "app", "model", "prov
            "upstream_model", "status", "outcome", "attempts", "fallbacks",
            "prompt_tokens", "completion_tokens", "cost_micro_usd", "latency_ms")
 
+MAX_PENDING = 100_000  # rows held while writes keep failing, ~25 MB
+
 GROUPS = {"team": "team", "app": "app", "key": "key_name", "model": "model",
           "provider": "provider", "day": "substr(ts, 1, 10)"}
 
@@ -67,6 +69,7 @@ class UsageLedger:
             except sqlite3.Error:
                 with self._buf_lock:  # e.g. the other replica held the lock too long: retry
                     self._pending[:0] = rows
+                    del self._pending[:-MAX_PENDING]  # a long outage drops the oldest, not memory
                 raise
         return len(rows)
 

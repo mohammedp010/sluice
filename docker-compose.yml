@@ -2,7 +2,9 @@
 services:
   redis:
     image: redis:7-alpine
-    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    command: ["redis-server", "--save", "", "--appendonly", "yes"]  # budgets must survive a restart
+    volumes:
+      - redis-data:/data
   jaeger:                          # traces: UI on http://localhost:16686 (in-memory storage)
     image: jaegertracing/jaeger:2.21.0
     ports: ["16686:16686", "4318:4318"]   # 4318 = OTLP/HTTP, so a local gateway can export too
@@ -18,3 +20,6 @@ services:
   gateway-2:
     <<: *gw
     ports: ["8002:8000"]
+
+volumes:
+  redis-data:

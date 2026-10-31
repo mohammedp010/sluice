@@ -17,6 +17,7 @@ import time
 from contextlib import AsyncExitStack
 from datetime import timedelta
 
+import anyio
 import httpx
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
@@ -27,6 +28,7 @@ from ..config import McpServerConfig
 from .pins import ToolPins, definition
 
 SEP = "__"  # public tool name = "<server>__<tool>"
+DEAD = (anyio.ClosedResourceError, anyio.BrokenResourceError)  # the session's streams are gone
 
 
 class UpstreamDown(Exception):
@@ -50,6 +52,7 @@ class Upstreams:
 
     async def _hold(self, name: str, ready: asyncio.Future) -> None:
         cfg = self.cfg[name]
+        session = None
         try:
             async with AsyncExitStack() as stack:
                 if cfg.command:
@@ -73,7 +76,15 @@ class Upstreams:
             if not ready.done():
                 ready.set_exception(UpstreamDown(f"{name}: {type(e).__name__}: {e}"))
         finally:
-            self._sessions.pop(name, None)
+            if session is not None and self._sessions.get(name) is session:  # not a reconnect's
+                del self._sessions[name]
+
+    def _drop(self, name: str) -> None:
+        """The connection died after startup (e.g. the server process exited): close what's
+        left of it, so the next use reconnects."""
+        self._sessions.pop(name, None)
+        if t := self._tasks.pop(name, None):
+            t.cancel()
 
     async def session(self, name: str) -> ClientSession:
         if name in self._sessions:
@@ -104,8 +115,11 @@ class Upstreams:
                     self._tools[name] = (await s.list_tools()).tools
                     self._tools_at[name] = time.monotonic()
                     refreshed.append(name)
-                except Exception:  # noqa: BLE001 -- one server down mustn't hide the others
-                    self._tools.pop(name, None)
+                except Exception as e:  # noqa: BLE001 -- one server down mustn't hide the others
+                    if isinstance(e, DEAD):
+                        self._drop(name)
+                # The last list stays: a call then fails as upstream_down, not as an
+                # unknown tool, which the probe rule (R1) would count against the caller's key.
             for t in self._tools.get(name, []):
                 out[f"{name}{SEP}{t.name}"] = t
         if self.pins:  # after the loop, so the lint knows every server's tool names
@@ -118,9 +132,13 @@ class Upstreams:
     async def call(self, public: str, args: dict) -> CallToolResult:
         server, _, tool = public.partition(SEP)
         s = await self.session(server)
-        # the SDK's own timeout, not task cancellation: the lesson of ADR 0007
-        return await s.call_tool(tool, args, read_timeout_seconds=timedelta(
-            seconds=self.cfg[server].timeout_s))
+        try:
+            # the SDK's own timeout, not task cancellation: the lesson of ADR 0007
+            return await s.call_tool(tool, args, read_timeout_seconds=timedelta(
+                seconds=self.cfg[server].timeout_s))
+        except DEAD as e:
+            self._drop(server)
+            raise UpstreamDown(f"{server}: connection lost") from e
 
     async def close(self) -> None:
         self._stop.set()

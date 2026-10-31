@@ -64,16 +64,16 @@ def _random_looking(run: str) -> bool:
 
 def scan(text: str, path: str = "") -> list[Finding]:
     found: list[Finding] = []
-    taken: list[tuple[int, int]] = []
+    taken = bytearray(len(text))  # 1 where a finding already covers the char: O(match), not O(found)
 
     def free(a: int, b: int) -> bool:
-        return all(b <= x or a >= y for x, y in taken)
+        return not any(taken[a:b])
 
     for kind, rx in PATTERNS:
         for m in rx.finditer(text):
             if free(m.start(), m.end()):
                 found.append(Finding(kind, m.start(), m.end(), path))
-                taken.append((m.start(), m.end()))
+                taken[m.start():m.end()] = b"\x01" * (m.end() - m.start())
     for m in _RUN.finditer(text):
         line_start = text.rfind("\n", 0, m.start()) + 1  # the hint must be on the same line
         if free(m.start(), m.end()) and _random_looking(m.group(0).rstrip("=")) and _HINT.search(

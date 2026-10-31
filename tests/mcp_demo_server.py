@@ -31,6 +31,12 @@ def getenv(name: str) -> str:
 
 
 @mcp.tool()
+def pid() -> int:
+    """This server's process id (for the crash test)."""
+    return os.getpid()
+
+
+@mcp.tool()
 def fail() -> str:
     """Always raises: a tool error, not a protocol error."""
     raise ValueError("boom")

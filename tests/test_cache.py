@@ -105,6 +105,14 @@ async def test_paraphrase_hits_and_near_miss_does_not():
     assert near.result == "miss" and near.match.similarity == pytest.approx(0.8)
 
 
+async def test_json_mode_never_gets_a_prose_answer():
+    c = make_cache()
+    p = await probe(c)
+    c.put(p, CachedAnswer("What is the capital of France?", "Paris.", "stop", Usage()))
+    assert (await probe(c, response_format={"type": "json_object"})).result == "miss"
+    assert (await probe(c)).result == "hit"
+
+
 @pytest.mark.parametrize("kw,reason", [
     ({"temperature": 0.7}, "temperature"),
     ({"messages": [Message("user", "hi"), Message("assistant", "hello")]}, "not_user_turn"),

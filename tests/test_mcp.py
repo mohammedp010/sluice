@@ -1,5 +1,8 @@
 """Phase 8: MCP proxy. Official SDK client -> Sluice /mcp -> official SDK server (stdio)."""
+import asyncio
 import json
+import os
+import signal
 import sys
 from pathlib import Path
 
@@ -122,6 +125,18 @@ async def test_a_dead_tool_server_hides_its_tools_without_breaking_the_endpoint(
     app, raw = mcp_app(["*"], {"dead": {"command": [sys.executable, "-c", "raise SystemExit(1)"]}})
     async with sdk_session(app, raw) as s:
         assert (await s.list_tools()).tools == []
+
+
+async def test_a_crashed_tool_server_is_reconnected_and_never_looks_like_probing():
+    app, raw = mcp_app(["demo__*"])
+    async with sdk_session(app, raw) as s:
+        os.kill(int((await s.call_tool("demo__pid", {})).content[0].text), signal.SIGKILL)
+        await asyncio.sleep(0.5)  # let the stdio reader see the pipe close
+        with pytest.raises(McpError, match="tool server unavailable"):
+            await s.call_tool("demo__add", {"a": 1, "b": 2})
+        assert (await s.call_tool("demo__add", {"a": 1, "b": 2})).content[0].text == "3"
+    outcomes = [r["outcome"] for r in reversed(app.state.mcp.audit.rows())]
+    assert outcomes == ["ok", "upstream_down", "ok"]  # not "unknown", which R1 counts
 
 
 async def test_http_rules():
