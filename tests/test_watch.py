@@ -139,6 +139,8 @@ async def test_admin_api_lists_alerts():
     r = await req(app, "", "127.0.0.1", method="/v1/sluice/admin/security")
     body = r.json()
     assert body["alerts"][0]["rule"] == "R3_new_network" and body["paid_off"] is False
+    assert body["watch"]["probe_calls"] == 10 and "webhook_env" not in body["watch"]
+    assert body["guard"]["chat"] == "audit"
 
 
 async def test_webhook_gets_a_slack_compatible_post(monkeypatch):

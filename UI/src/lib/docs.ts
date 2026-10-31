@@ -1,11 +1,10 @@
-// Repo files the UI reads at build time: ADRs, learning notes, and every benchmark result.
+// Repo files the UI reads at build time: ADRs and every benchmark result.
 // Vite inlines them, so the Evidence / Decisions / Build log panels work with the gateway off.
 
 const raw = (g: Record<string, unknown>) =>
   Object.fromEntries(Object.entries(g).map(([p, v]) => [p.split("/").pop()!, v as string]));
 
 export const adrs = raw(import.meta.glob("../../../docs/decisions/*.md", { query: "?raw", import: "default", eager: true }));
-export const notes = raw(import.meta.glob("../../../docs/learning/*.md", { query: "?raw", import: "default", eager: true }));
 export const results = raw(import.meta.glob("../../../bench/results/*.{md,txt}", { query: "?raw", import: "default", eager: true }));
 export const resultJson = Object.fromEntries(
   // named, not *.json: some result files hold NaN (valid for Python's json, not for JSON.parse)
@@ -29,5 +28,6 @@ export const adrList: Adr[] = Object.entries(adrs)
     return { n, file, title, status, body };
   });
 
-/** "Phase 3" -> the ADR numbers whose status line says they were accepted in that phase. */
-export const adrsForPhase = (phase: number) => adrList.filter((a) => new RegExp(`Phase ${phase}\\b`).test(a.status));
+/** The ADRs a commit belongs to: those its message names ("ADR 0012") and those accepted in a phase it names. */
+export const adrsFor = (text: string, phases: number[]) =>
+  adrList.filter((a) => text.includes(`ADR ${a.n}`) || phases.some((p) => new RegExp(`Phase ${p}\\b`).test(a.status)));

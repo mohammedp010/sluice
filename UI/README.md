@@ -30,11 +30,12 @@ with the gateway off.
 | Lab | Send a request; the pipeline map replays its path step by step; span waterfall at real timings; inspector with trail, response, headers, ledger row, raw span | `/v1/chat/completions`, `/v1/sluice/admin/traces/{id}` |
 | Topology | Routes and their fallback chains, providers with live breakers, every gateway setting | `/v1/sluice/admin/overview` |
 | Ledger | Spend by team / app / key / model / provider / day; recent rows open in the Lab | `/v1/sluice/admin/ledger*` |
-| Evidence | Every README claim, charted from its `bench/results/` file, including negative results and losses | `bench/results/*` |
-| Decisions | ADRs 0001–0009 | `docs/decisions/` |
+| Evidence | Every README claim, charted from its `bench/results/` file, including negative results and losses; the secret guard, behaviour watch and tool lint evals included | `bench/results/*` |
+| Decisions | ADRs 0001–0012 | `docs/decisions/` |
 | Build log | Commits as revisions, with the ADRs of each change | `git log`, `docs/decisions/` |
-| MCP | Tool grants per key (glob matrix) and the audit log | `/v1/sluice/admin/mcp`, `/keys` |
-| Keys | Limits, budgets with live spend, model and tool grants (never the key) | `/v1/sluice/admin/keys` |
+| MCP | Tool grants per key (glob matrix), tool pins (approved, pending, quarantined) and the audit log with the secrets it saw (types only) | `/v1/sluice/admin/mcp`, `/keys` |
+| Keys | Limits, budgets with live spend, model and tool grants, expiry, allowed networks, suspended or revoked state (never the key) | `/v1/sluice/admin/keys` |
+| Security | Behaviour watch: enforce mode, lockdown, suspended keys with the rule that did it, recent alerts, the thresholds and secret-guard modes in force | `/v1/sluice/admin/security`, `/keys` |
 
 ## Lab routes (`policies/lab.yaml`)
 

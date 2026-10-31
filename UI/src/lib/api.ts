@@ -150,6 +150,7 @@ export interface AuditRow {
   args_bytes: number | null;
   latency_ms: number | null;
   error: string | null;
+  egress: string | null; // JSON list of {where, type, path, start, len}: secrets seen, never their values
 }
 
 export interface McpInfo {
@@ -157,6 +158,19 @@ export interface McpInfo {
   summary: { key: string; tool: string; outcome: string; calls: number }[];
   audit: AuditRow[];
   pins: PinRow[];
+}
+
+/** The behaviour watch (ADR 0012): what it did lately and the rules in force. */
+export interface SecurityInfo {
+  alerts: ({ ts: string; rule: string; action: string } & Record<string, string | number | boolean>)[];
+  paid_off: boolean; // `sluice.admin lockdown` switched paid providers off
+  enforce: boolean; // false: every action is only an alert
+  watch: {
+    probe_calls: number; probe_window_s: number; burn_fraction: number; burn_usd: number | null;
+    burn_window_s: number; new_network_days: number; scanner_failures: number;
+    scanner_window_s: number; block_ip_s: number;
+  };
+  guard: { tool_args: Record<string, string>; tool_results: Record<string, string>; chat: string };
 }
 
 /** A tool's pin (ADR 0011): the trusted definition's hash against the one seen last. */
@@ -210,6 +224,7 @@ export const api = {
     get<SummaryRow[]>(`/v1/sluice/admin/ledger/summary?by=${by}${since ? `&since=${since}` : ""}`),
   keys: () => get<KeyInfo[]>("/v1/sluice/admin/keys"),
   mcp: () => get<McpInfo>("/v1/sluice/admin/mcp"),
+  security: () => get<SecurityInfo>("/v1/sluice/admin/security"),
 };
 
 // ---------------------------------------------------------------------------------------------

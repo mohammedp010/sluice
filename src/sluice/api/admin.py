@@ -149,11 +149,14 @@ def admin_router(recent: RecentTraces, token_env: str,
 
     @api.get("/security")
     async def security(request: Request):
-        """The behaviour watch's recent alerts and actions, newest first, and the lockdown flag."""
+        """The behaviour watch's recent alerts and actions (newest first), the lockdown flag, and the
+        rules in force."""
         st = request.app.state
         return {"alerts": list(st.watch.alerts.recent),
                 "paid_off": bool(st.keys and st.keys.flag("paid_off")),
-                "enforce": st.settings.watch.enforce and st.settings.watch.enabled}
+                "enforce": st.settings.watch.enforce and st.settings.watch.enabled,
+                "watch": st.settings.watch.model_dump(exclude={"webhook_env"}),
+                "guard": st.settings.guard.model_dump()}
 
     @api.get("/mcp")
     async def mcp(request: Request, limit: int = Query(100, ge=1, le=1000)):

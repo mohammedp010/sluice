@@ -194,6 +194,24 @@ const CLAIMS: Claim[] = [
     ),
   },
   {
+    id: "egress", title: "Secret egress guard", verdict: "caveat",
+    claim: "560 of 560 generated fake secrets found, 0 false positives in 4.4 MB of real text, about 140 µs per KB. Encoded or spaced secrets get through.",
+    scripts: ["bench/egress_eval.py"], files: ["egress-eval.md", "egress-eval.json"], adrs: ["0012"],
+    figure: () => <Fig title="The recorded run" cap="The evasion rows are the honest part: the guard raises the cost of the common automated leak, not of a careful attacker."><Markdown>{(results["egress-eval.md"] ?? "").replace(/^# .*\n/, "")}</Markdown></Fig>,
+  },
+  {
+    id: "watch", title: "Behaviour watch", verdict: "holds",
+    claim: "A stolen key stops at $23 instead of $40; a tool probe after 10 guesses; a SQL-injection bearer blocks its IP on the 1st request; 0 false suspensions in a modelled day of 36k events.",
+    scripts: ["bench/security_eval.py"], files: ["security-eval.md", "security-eval.json"], adrs: ["0012"],
+    figure: () => <Fig title="Attacks, with and without the watch" cap="The normal day is a traffic model written for the eval, not real traffic: it shows which everyday noise the rules tolerate, not a rate to promise."><Markdown>{(results["security-eval.md"] ?? "").replace(/^# .*\n/, "")}</Markdown></Fig>,
+  },
+  {
+    id: "tool-lint", title: "MCP tool description lint", verdict: "caveat",
+    claim: "1 of 63 real tool descriptions held for review; 19 of 32 poisoned strings flagged, 0 of 9 innocently worded ones. A cheap first filter, not a defence.",
+    scripts: ["bench/tool_lint_eval.py"], files: ["tool-lint-eval.md", "tool-lint-eval.json"], adrs: ["0011"],
+    figure: () => <Fig title="The recorded run" cap="Pinning catches a changed definition; the lint only helps with the first sight of a new one."><Markdown>{(results["tool-lint-eval.md"] ?? "").replace(/^# .*\n/, "")}</Markdown></Fig>,
+  },
+  {
     id: "features", title: "Where Sluice loses to LiteLLM", verdict: "loses",
     claim: "Providers, an admin UI, key management, per team and per user budgets, integrations, maturity.",
     scripts: ["bench/compare_report.py"], files: ["compare.md"], adrs: [],

@@ -1,7 +1,6 @@
 import commits, { type Commit } from "virtual:git-log";
-import { adrsForPhase, notes } from "../lib/docs";
+import { adrsFor } from "../lib/docs";
 import { go } from "../lib/nav";
-import Markdown from "../components/Markdown";
 import { Empty } from "../components/state";
 
 /** Phases a commit belongs to, read from its subject ("Phase 6: …", "Sluice phases 1-3: …"). */
@@ -55,19 +54,12 @@ export default function BuildLog({ selected }: { selected: string }) {
               <h1>{cur.subject}</h1>
               <div className="ev-src">
                 {phases.map((p) => <span key={p} className="pill accent">Phase {p}</span>)}
-                {!phases.length && <span className="pill warn">fix between phases</span>}
-                {phases.flatMap(adrsForPhase).map((a) => (
+                {adrsFor(`${cur.subject}\n${cur.body}`, phases).map((a) => (
                   <a key={a.n} href={`#decisions/${a.n}`} onClick={(e) => { e.preventDefault(); go("decisions", a.n); }}>ADR {a.n}: {a.title}</a>
                 ))}
               </div>
             </div>
             {clean(cur.body) && <pre className="cmd" style={{ background: "var(--chrome)", padding: "12px 14px", lineHeight: 1.6 }}>{clean(cur.body)}</pre>}
-            {phases.map((p) => notes[`phase-${p}.md`] && (
-              <div key={p} className="figure">
-                <h3>Phase {p}: questions to answer in your own words</h3>
-                <Markdown>{notes[`phase-${p}.md`].replace(/^# .*\n/, "")}</Markdown>
-              </div>
-            ))}
           </div>
         </div>
       </section>

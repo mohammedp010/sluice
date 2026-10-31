@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  BookOpen, Dam, FlaskConical, GitCommitVertical, KeyRound, Network, Receipt, ScrollText, Wrench,
+  BookOpen, Dam, FlaskConical, GitCommitVertical, KeyRound, Network, Receipt, ScrollText, ShieldAlert, Wrench,
 } from "lucide-react";
 import { api, type BreakerState } from "./lib/api";
 import { go, type PanelId } from "./lib/nav";
@@ -14,6 +14,7 @@ import Decisions from "./panels/Decisions";
 import BuildLog from "./panels/BuildLog";
 import Mcp from "./panels/Mcp";
 import Keys from "./panels/Keys";
+import Security from "./panels/Security";
 
 const PANELS: { id: PanelId; label: string; icon: typeof FlaskConical }[] = [
   { id: "lab", label: "Lab", icon: FlaskConical },
@@ -24,6 +25,7 @@ const PANELS: { id: PanelId; label: string; icon: typeof FlaskConical }[] = [
   { id: "build", label: "Build log", icon: GitCommitVertical },
   { id: "mcp", label: "MCP", icon: Wrench },
   { id: "keys", label: "Keys", icon: KeyRound },
+  { id: "security", label: "Security", icon: ShieldAlert },
 ];
 
 /** `#panel/arg`: the panel and an optional selection inside it (a trace id, an ADR, ...). */
@@ -95,6 +97,7 @@ export default function App() {
         {panel === "build" && <BuildLog selected={arg} />}
         {panel === "mcp" && <Mcp />}
         {panel === "keys" && <Keys />}
+        {panel === "security" && <Security />}
       </main>
     </div>
   );

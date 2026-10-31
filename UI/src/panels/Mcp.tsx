@@ -8,8 +8,15 @@ import { ApiProblem, Empty, SkeletonRows, usePoll } from "../components/state";
 const globMatch = (pattern: string, name: string) =>
   new RegExp(`^${pattern.replace(/[.+^${}()|\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".")}$`).test(name);
 
-const OUTCOME_CLS: Record<string, string> = { ok: "ok", denied: "bad", unknown: "warn", error: "bad", tool_error: "warn", quarantined: "bad", pending: "warn", egress_blocked: "bad", rate_limited: "warn" };
+const OUTCOME_CLS: Record<string, string> = { ok: "ok", denied: "bad", unknown: "warn", error: "bad", tool_error: "warn", quarantined: "bad", pending: "warn", egress_blocked: "bad", rate_limited: "warn", upstream_down: "bad" };
 const PIN_CLS: Record<string, string> = { approved: "ok", pending: "warn", quarantined: "bad" };
+
+/** "tool_args: aws_access_key, jwt" from the audit row's findings (types and places, never values). */
+function egressSummary(raw: string | null): string {
+  if (!raw) return "—";
+  const found: { where: string; type: string }[] = JSON.parse(raw);
+  return [...new Set(found.map((f) => `${f.where}: ${f.type}`))].join(", ");
+}
 
 export default function Mcp() {
   const mcp = usePoll(api.mcp, 4000);
@@ -26,7 +33,8 @@ export default function Mcp() {
             <p>
               Tool servers behind <code>POST /mcp</code>, merged as <code>server__tool</code>. Keys see only the tools their globs grant (deny by default),
               and a denied tool looks exactly like one that doesn't exist. Every <code>tools/call</code> is audited, denials included, with a hash of
-              the arguments but never the arguments themselves.{" "}
+              the arguments but never the arguments themselves, and the audit is hash-chained so an edited or deleted row shows up in <code>verify()</code>.
+              Secrets found in arguments or results are recorded by type, never by value.{" "}
               <a href="#decisions/0009" onClick={(e) => { e.preventDefault(); go("decisions", "0009"); }}>ADR 0009</a>
             </p>
           </div>
@@ -112,7 +120,7 @@ export default function Mcp() {
                   <Empty icon={<Wrench aria-hidden />} title="No tool calls yet">Point an MCP client at <code>http://localhost:8000/mcp</code> with a key that has <code>--tools</code> grants.</Empty>
                 ) : (
                   <table className="tbl">
-                    <thead><tr><th>when</th><th>key · team</th><th>tool</th><th>outcome</th><th className="num">args</th><th className="num">latency</th><th>error</th></tr></thead>
+                    <thead><tr><th>when</th><th>key · team</th><th>tool</th><th>outcome</th><th className="num">args</th><th className="num">latency</th><th>secrets seen</th><th>error</th></tr></thead>
                     <tbody>
                       {mcp.data!.audit.map((a) => (
                         <tr key={a.id}>
@@ -122,6 +130,7 @@ export default function Mcp() {
                           <td><span className={`pill ${OUTCOME_CLS[a.outcome] ?? "neutral"}`}>{a.outcome}</span></td>
                           <td className="num" title={a.args_sha256 ?? ""}>{a.args_bytes ?? 0} B · {a.args_sha256?.slice(0, 8) ?? "—"}</td>
                           <td className="num">{a.latency_ms != null ? ms(a.latency_ms) : "—"}</td>
+                          <td className="mono">{egressSummary(a.egress)}</td>
                           <td className="mono">{a.error ?? ""}</td>
                         </tr>
                       ))}
