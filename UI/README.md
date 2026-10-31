@@ -32,7 +32,7 @@ with the gateway off.
 | Ledger | Spend by team / app / key / model / provider / day; recent rows open in the Lab | `/v1/sluice/admin/ledger*` |
 | Evidence | Every README claim, charted from its `bench/results/` file, including negative results and losses | `bench/results/*` |
 | Decisions | ADRs 0001–0009 | `docs/decisions/` |
-| Build log | Commits as revisions, with each phase's ADRs and learning-note questions | `git log`, `docs/learning/` |
+| Build log | Commits as revisions, with the ADRs of each change | `git log`, `docs/decisions/` |
 | MCP | Tool grants per key (glob matrix) and the audit log | `/v1/sluice/admin/mcp`, `/keys` |
 | Keys | Limits, budgets with live spend, model and tool grants (never the key) | `/v1/sluice/admin/keys` |
 

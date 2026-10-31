@@ -1,13 +1,13 @@
 # Sluice
 
-An OpenAI-compatible LLM gateway, built phase by phase as a learning project. It
+An OpenAI-compatible LLM gateway. It
 sits between applications and model providers and decides how much traffic flows, where it
 goes, and when to shut it off. It handles keys, rate limits and budgets, retries, fallback and
 circuit breaking, tracing and cost attribution, a semantic cache, cheap-first routing, stream
 resume after a mid-answer failure, an MCP tool proxy with per-key permissions, and hardening
 against the ways AI gateways were attacked in 2026 (ADRs 0010-0012).
 
-**Total spent on LLM APIs: $0.** Every model call in this repo went to a mock upstream or to a
+**Tests and benchmarks cost nothing to run.** Every model call in them goes to a mock upstream or to a
 local Ollama model. Paid providers are blocked unless `SLUICE_ALLOW_PAID=1`, and even then
 they are capped per day.
 
@@ -73,17 +73,19 @@ curl localhost:8000/v1/chat/completions -H "Authorization: Bearer <key>" \
 
 The default policy (`policies/routes.yaml`) routes `mock-model` to the built-in mock and
 `local-small` / `auto` to Ollama (`ollama pull llama3.2:1b mistral nomic-embed-text`).
-Two replicas + Redis + Jaeger: `docker compose up` (policy `policies/compose.yaml`).
+Two replicas + Redis + Jaeger: `docker compose up` (policy `policies/compose.yaml`). Redis keeps
+its data in a named volume (append-only file), so budgets survive a restart; on a fresh database,
+start the replicas one at a time.
 
 | Feature | How | Decision |
 |---|---|---|
 | Fallback, retries, breaker | `chain:` per route, `retries`, `timeout_s`, `deadline_s` | ADR 0001, 0002, 0007 |
 | Keys, limits, budgets | `python -m sluice.admin create-key ...`; Redis for multi-replica | ADR 0003 |
 | Traces, metrics, cost | Jaeger via `telemetry.traces: otlp`; `GET /metrics`; `python -m sluice.report --by team` | ADR 0004 |
-| Semantic cache | `cache: true` on a route; `Cache-Control: no-cache` / `no-store` honoured | ADR 0005 |
+| Semantic cache | `cache: true` on a route; scoped by tenant, model, sampling parameters and `response_format`; `Cache-Control: no-cache` / `no-store` honoured | ADR 0005 |
 | Quality routing | `escalate:` route + `escalate_on:` checks | ADR 0006 |
 | Stream resume | `stream_resume: prefill` on a route (backup must honour prefill) | ADR 0008 |
-| MCP proxy | `mcp.servers` in the policy; keys get `--tools "server__tool*"` grants; `python -m sluice.report --mcp` | ADR 0009 |
+| MCP proxy | `mcp.servers` in the policy; keys get `--tools "server__tool*"` grants; `python -m sluice.report --mcp`; a tool server that dies is reconnected on the next call | ADR 0009 |
 | Hardening | tool servers never see provider keys; admin API loopback-only or `SLUICE_ADMIN_TOKEN`; every route classified in `tests/test_invariants.py`; hash-pinned `requirements*.lock`; CI with `pip-audit` | ADR 0010 |
 | Key and tool containment | `create-key --ttl 30d --cidrs 10.0.0.0/8`; `rotate-key <id> --grace 24h`; `revoke --team X`; MCP tool definitions pinned, changes quarantined until `sluice.admin tools approve` | ADR 0011 |
 | Watch, egress guard, incident response | rules that suspend a key or block an IP on their own (`watch:`); secrets in tool traffic and prompts audited, blocked or redacted (`guard:`); `tool_rpm`; `sluice.admin lockdown`; hash-chained audit with retention; [runbook](docs/runbook-key-compromise.md) | ADR 0012 |
@@ -102,7 +104,7 @@ the API on and adds mock routes that fail on purpose. Setup is in [UI/README.md]
 
 ```bash
 redis-server --port 6399 --save "" &      # optional: the Redis tests skip without it
-.venv/bin/pytest                          # 240 tests, ~10 s
+.venv/bin/pytest                          # 244 tests, ~10 s
 ```
 
 The LiteLLM comparison needs LiteLLM in its own environment (pinned, Python 3.12) and uvloop:
@@ -128,23 +130,16 @@ src/sluice/   api/ (FastAPI app, SSE)  providers/ (mock, OpenAI-compatible)  rou
 policies/     routes.yaml (local), compose.yaml (docker), lab.yaml (the UI's lab)
 UI/           workbench UI (Vite + React); see UI/README.md
 bench/        load generator, mock upstream, every experiment; results/ holds their output
-docs/         decisions/ (ADRs 0001-0012), runbook-key-compromise.md, learning/ (one note per phase, with questions)
+docs/         decisions/ (ADRs 0001-0012), runbook-key-compromise.md
 ```
-
-## Definition of done
-
-- [x] Failover demonstrated under injected failure, with numbers in `bench/results/`
-- [x] Streaming failure behaviour documented and tested (ADR 0001)
-- [x] Limits verified across multiple instances
-- [x] Cache false-hit rate reported alongside hit rate
-- [x] Routing result reported honestly, including negative results
-- [x] Comparison with LiteLLM on the same mock upstream, including weaknesses
-- [x] Every number in this README links to a script and a result file
-- [x] Total money spent on LLM APIs: $0
 
 ## Known limits
 
-- One OpenAI-compatible adapter. Azure OpenAI and Bedrock (the third Phase 8 item) are not built.
+- One OpenAI-compatible adapter. Azure OpenAI and Bedrock are not built.
+- After a Redis restart, each replica's first request fails with 503 `limiter_unavailable`
+  (fail closed) before its connection pool recovers.
+- The usage ledger is written once a second: a crash loses up to ~1 s of rows. If writes keep
+  failing, the buffer keeps the newest 100,000 rows and drops the rest.
 - Stream resume's `prefill` was measured on Ollama only; some providers don't honour a trailing
   assistant message (ADR 0008).
 - MCP: tools only (no resources/prompts) (ADR 0009). A changed

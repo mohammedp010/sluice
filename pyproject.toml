@@ -1,7 +1,7 @@
 [project]
 name = "sluice"
 version = "0.1.0"
-description = "A learn-by-building OpenAI-compatible LLM gateway"
+description = "OpenAI-compatible LLM gateway: keys, limits, failover, cache and an MCP tool proxy"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",
@@ -21,7 +21,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-asyncio>=0.24", "openai>=1.40", "ruff>=0.6",
        "pip-tools>=7.4", "pip-audit>=2.7"]  # regenerate the locks, audit them (ADR 0010)
-bench = ["uvloop==0.23.0", "pyinstrument==5.1.1"]  # load generator + profiler (Phase 7)
+bench = ["uvloop==0.23.0", "pyinstrument==5.1.1"]  # load generator + profiler
 
 [build-system]
 requires = ["setuptools>=68"]
